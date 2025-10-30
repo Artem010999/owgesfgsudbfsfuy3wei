@@ -1,0 +1,16 @@
+audiocraft==1.3.0
+av==11.0.0
+# PyTorch stack matching audiocraft 1.3.0
+torch==2.1.0
+torchvision==0.16.0
+torchaudio==2.1.0
+# Avoid NumPy 2.x ABI breakage for many deps
+numpy==1.26.4
+# Transformers compatible with torch 2.1.x
+transformers==4.41.2
+tokenizers==0.19.1
+huggingface_hub>=0.25.1,<1.0
+# Use Gradio 3.x to avoid json schema bug
+gradio==3.50.2
+soundfile==0.12.1
+
