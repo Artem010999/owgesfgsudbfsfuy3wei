@@ -158,13 +158,13 @@ function Overlay({ onFinished }) {
             <p className="line-1">В поисках <em>рабочего</em> вайба?</p>
             <p className="line-2">Тогда ты по адресу!</p>
           </div>
-          <button
-              id="hold-button"
-              type="button"
-              aria-label="Удерживай 2 секунды, чтобы продолжить"
-              onMouseDown={start}
-              onTouchStart={start}
-          >
+        <button
+          id="hold-button"
+          type="button"
+          aria-label="Удерживай 1 секунду, чтобы продолжить"
+          onMouseDown={start}
+          onTouchStart={start}
+        >
             Погнали!
             <span className="hold-progress" ref={progressRef} aria-hidden="true"/>
           </button>
@@ -377,7 +377,9 @@ function ChatLog({ items }) {
   return (
     <div className="chat-log">
       {items.map((m, i) => (
-        <div key={i} className={"chat-msg " + (m.role==="bot"?"bot":"user")}>{m.text}</div>
+        <div key={i} className={"chat-msg " + (m.role === "bot" ? "bot" : "user")}>
+          {m.text}
+        </div>
       ))}
     </div>
   );
@@ -385,10 +387,63 @@ function ChatLog({ items }) {
 
 function ChatInput({ onSend }) {
   const [value, setValue] = useState('');
+  const textareaRef = useRef(null);
+  const maxRows = 4;
+
+  const autoResize = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 20;
+    const maxHeight = lineHeight * maxRows + parseFloat(getComputedStyle(textarea).paddingTop) + parseFloat(getComputedStyle(textarea).paddingBottom);
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+  };
+
+  useEffect(() => {
+    autoResize();
+  }, []);
+
+  const handleSend = () => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onSend(trimmed);
+    setValue('');
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.overflowY = 'hidden';
+    }
+  };
+
   return (
     <div className="chat-input-row">
-      <input value={value} onChange={e=>setValue(e.target.value)} placeholder="Напишите сообщение..." onKeyDown={e=>{ if(e.key==="Enter"){ onSend(value); setValue(''); } }} />
-      <button onClick={()=>{ onSend(value); setValue(''); }}>Отправить</button>
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          autoResize();
+        }}
+        placeholder="Напишите сообщение..."
+        rows={1}
+        className="chat-input"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
+      />
+      <div className="chat-actions">
+        <button type="button" className="chat-action-btn" onClick={handleSend} aria-label="Отправить сообщением">
+          ⌯⌲
+        </button>
+        <button type="button" className="chat-action-btn" aria-label="Записать голосовое">
+          🎙️
+        </button>
+      </div>
     </div>
   );
 }
