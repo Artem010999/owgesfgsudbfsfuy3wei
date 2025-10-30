@@ -1,8 +1,8 @@
 const { useEffect, useMemo, useRef, useState } = React;
 
-const HOLD_MS = 2000;
+const HOLD_MS = 1000;
 const GRID_COLS = 40;
-const GRID_ROWS = 25; // 40 * 25 = 1000 tiles
+const GRID_ROWS = 20; // 40 * 20 = 800 tiles
 const STEP_DELAY = 18; // ms per diagonal step
 
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
@@ -25,7 +25,7 @@ function Tiles({ containerRef, active }) {
     const rect = el.getBoundingClientRect();
     const tileWidth = rect.width / GRID_COLS;
     const tileHeight = rect.height / GRID_ROWS;
-    const overlap = 1; // px overlap to avoid visible seams
+    const overlap = 2; // extra overlap to avoid seams
     const next = [];
     for (let y = 0; y < GRID_ROWS; y++) {
       for (let x = 0; x < GRID_COLS; x++) {
@@ -33,8 +33,8 @@ function Tiles({ containerRef, active }) {
         const delay = diagIndex * STEP_DELAY;
         next.push({
           key: `${x}-${y}`,
-          left: Math.floor(x * tileWidth) - overlap/2,
-          top: Math.floor(y * tileHeight) - overlap/2,
+          left: Math.floor(x * tileWidth) - 1,
+          top: Math.floor(y * tileHeight) - 1,
           width: Math.ceil(tileWidth) + overlap,
           height: Math.ceil(tileHeight) + overlap,
           delay,
@@ -133,7 +133,13 @@ function Overlay({ onFinished }) {
   }, [holding]);
 
   return (
-      <div id="intro-overlay" aria-modal="true" role="dialog" ref={overlayRef}>
+      <div
+        id="intro-overlay"
+        className={flying ? "finishing" : ""}
+        aria-modal="true"
+        role="dialog"
+        ref={overlayRef}
+      >
         <div className="overlay-bg" aria-hidden="true"/>
         <div className="tunnel" aria-hidden="true">
           {Array.from({length: 6}).map((_, i) => (
@@ -174,14 +180,50 @@ function App() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
   const [conversationId, setConversationId] = useState(null);
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem('app-theme');
+      if (saved === 'light') return 'light';
+    } catch (error) {
+      console.warn('Cannot read theme from storage', error);
+    }
+    return 'dark';
+  });
 
   const resetSession = () => {
     setChat([]);
     setCarouselIndex(0);
     setImageUrl('');
-    setMenuOpen(false);
     setConversationId(null);
-    // Не возвращаем стартовый оверлей
+  };
+
+  const handleRandom = () => {
+    const randomIndex = Math.floor(Math.random() * 7);
+    setCarouselIndex(randomIndex);
+    setImageUrl(`https://picsum.photos/seed/${Date.now()}-${Math.random()}/1200/900`);
+  };
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (showOverlay) {
+      root.removeAttribute('data-theme');
+    } else {
+      if (theme === 'light') {
+        root.setAttribute('data-theme', 'light');
+      } else {
+        root.removeAttribute('data-theme');
+      }
+    }
+
+    try {
+      window.localStorage.setItem('app-theme', theme);
+    } catch (error) {
+      console.warn('Cannot store theme', error);
+    }
+  }, [theme, showOverlay]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (
@@ -195,17 +237,79 @@ function App() {
           <span className="logo">ЛОГОТИП</span>
           <span className="tagline">генератор вайба</span>
         </div>
-        <button className="menu-toggle" onClick={() => setMenuOpen(v => !v)} aria-label="Меню">≡</button>
-      </header>
-
-      <nav className={"quick-menu" + (menuOpen ? " open" : "") }>
-        <a href="https://example.com" target="_blank" rel="noreferrer">Проф. Тест</a>
-        <button onClick={() => window.dispatchEvent(new CustomEvent("open-settings"))}>Настройки</button>
-        <button onClick={resetSession}>Начать заново</button>
-        <div className="row">
-          <a href="https://t.me/your_bot" target="_blank" rel="noreferrer">Telegram</a>
+        <div className="menu-area">
+          <nav
+            className={"quick-menu" + (menuOpen ? " open" : "")}
+            style={{ "--count": 6 }}
+            aria-hidden={!menuOpen}
+          >
+            <a
+              className="menu-item"
+              style={{ "--i": 5 }}
+              href="hhh.html"
+              onClick={() => {
+               }}
+            >
+              Проф. Тест
+            </a>
+            <button
+              className="menu-item"
+              style={{ "--i": 4 }}
+              onClick={resetSession}
+              type="button"
+            >
+              Начать заново
+            </button>
+            <button
+              className="menu-item"
+              style={{ "--i": 3 }}
+              onClick={handleRandom}
+              type="button"
+            >
+              Рандом
+            </button>
+            <button
+              className="menu-item"
+              style={{ "--i": 2 }}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("open-settings"));
+               }}
+              type="button"
+            >
+              Настройки
+            </button>
+            <a
+              className="menu-item"
+              style={{ "--i": 1 }}
+              href="https://t.me/your_bot"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setMenuOpen(false)}
+            >
+              Telegram
+            </a>
+            <button
+              className="menu-item"
+              style={{ "--i": 0 }}
+              onClick={() => {
+                toggleTheme();
+               }}
+              type="button"
+            >
+              {theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+            </button>
+          </nav>
+          <button
+            className="menu-toggle"
+            onClick={() => setMenuOpen(v => !v)}
+            aria-label="Меню"
+            aria-expanded={menuOpen}
+            type="button"
+          >
+            ≡
+          </button>
         </div>
-      </nav>
+      </header>
 
       <main className="main-grid" id="main-content" tabIndex={-1} aria-live="polite">
         <section className="chat-panel">
@@ -225,7 +329,7 @@ function App() {
               setConversationId(data.conversation_id);
               setChat(prev => [...prev, { role: "bot", text: data.reply }]);
               // при ответе меняем картинку (заглушка URL)
-              setImageUrl(`https://picsum.photos/seed/${encodeURIComponent(Date.now()+text)}/1200/800`);
+              setImageUrl(`https://picsum.photos/seed/${encodeURIComponent(Date.now()+text)}/1200/900`);
             } catch(e) {
               setChat(prev => [...prev, { role: "bot", text: "Ошибка соединения с сервером" }]);
             }
@@ -234,12 +338,26 @@ function App() {
 
         <section className="right-grid">
           <div className="card-carousel">
-            <div className="carousel-title">Карточки (7 шт.)</div>
-            <button className="arrow left" disabled={carouselIndex===0} onClick={()=> setCarouselIndex(i=>Math.max(0,i-1))}>{"<"}</button>
+            <div className="carousel-title">Твоя карточка профессии :D</div>
+            <button
+              className="arrow left"
+              type="button"
+              disabled={carouselIndex === 0}
+              onClick={() => setCarouselIndex((value) => Math.max(0, value - 1))}
+            >
+              {'<'}
+            </button>
             <div className="carousel-inner">
               <CarouselContent index={carouselIndex} />
             </div>
-            <button className="arrow right" disabled={carouselIndex===6} onClick={()=> setCarouselIndex(i=>Math.min(6,i+1))}>{">"}</button>
+            <button
+              className="arrow right"
+              type="button"
+              disabled={carouselIndex === 6}
+              onClick={() => setCarouselIndex((value) => Math.min(6, value + 1))}
+            >
+              {'>'}
+            </button>
           </div>
 
           <ImagePanel url={imageUrl} />
@@ -278,9 +396,22 @@ function ChatInput({ onSend }) {
 // Carousel placeholder content for 7 steps
 function CarouselContent({ index }) {
   const items = [1,2,3,4,5,6,7].map(n => (
-    <div key={n} style={{opacity: 0.92, border:"1px solid #1a1a1a", borderRadius:12, padding:20, minWidth:240}}>
-      <h3 style={{marginTop:0}}>Рабочая карточка сотрудника — {n}</h3>
-      <p style={{color:"#bdbdbd"}}>Здесь будет компонент №{n}.</p>
+    <div
+      key={n}
+      style={{
+        width: '100%',
+        maxWidth: 'min(480px, 90%)',
+        background: 'var(--surface)',
+        border: '1px solid var(--panel-border)',
+        borderRadius: 16,
+        padding: 'clamp(16px, 2.6vw, 28px)',
+        display: 'grid',
+        gap: 'clamp(6px, 1.4vw, 12px)',
+        boxShadow: '0 6px 24px rgba(0, 0, 0, 0.18)'
+      }}
+    >
+      <h3 style={{margin: 0, fontSize: 'clamp(1rem, 2vw, 1.3rem)', color: 'var(--text)'}}>Рабочая карточка сотрудника — {n}</h3>
+      <p style={{color:'var(--text-muted)', fontSize: 'clamp(0.95rem, 1.6vw, 1.1rem)', margin: 0}}>Здесь будет компонент №{n}.</p>
     </div>
   ));
   return items[index];
@@ -292,16 +423,20 @@ function ImagePanel({ url }) {
   useEffect(()=>{ setLoaded(false); }, [url]);
   return (
     <div className="image-panel">
-      {!loaded && <NoisePlaceholder />}
-      {url && (
-        <img src={url} onLoad={()=> setLoaded(true)} className={loaded? "visible":''} alt="Визуализация рабочего вайба" />
-      )}
-      {!url && <div className="rendering-label">Ожидаем картинку…</div>}
+      {!loaded && <NoisePlaceholder waiting={!url} />}
+      {url ? (
+        <img
+          src={url}
+          onLoad={() => setLoaded(true)}
+          className={loaded ? 'visible' : ''}
+          alt="Визуализация рабочего вайба"
+        />
+      ) : null}
     </div>
   );
 }
 
-function NoisePlaceholder() {
+function NoisePlaceholder({ waiting = false }) {
   const canvasRef = useRef(null);
   useEffect(()=>{
     let raf=0; const canvas = canvasRef.current; if(!canvas) return;
@@ -311,8 +446,8 @@ function NoisePlaceholder() {
     const draw = ()=>{
       const {width, height} = canvas; const imgData = ctx.createImageData(width, height);
       for (let i=0;i<imgData.data.length;i+=4){
-        const v = Math.random()*255; // white noise
-        imgData.data[i]=v; imgData.data[i+1]=v; imgData.data[i+2]=v; imgData.data[i+3]=35+Math.random()*60;
+        const v = Math.random()*255;
+        imgData.data[i]=v; imgData.data[i+1]=v; imgData.data[i+2]=v; imgData.data[i+3]= 35+Math.random()*60;
       }
       ctx.putImageData(imgData,0,0);
       raf = requestAnimationFrame(draw);
@@ -325,7 +460,7 @@ function NoisePlaceholder() {
   return (
     <div className="noise-placeholder">
       <canvas className="noise-canvas" ref={canvasRef}></canvas>
-      <div className="rendering-label">Рендерим вайб…</div>
+      <div className="rendering-label">{waiting ? 'Ожидаем картинку…' : 'Рендерим вайб…'}</div>
     </div>
   );
 }
@@ -370,5 +505,3 @@ function SettingsModal() {
     </div>
   );
 }
-
-

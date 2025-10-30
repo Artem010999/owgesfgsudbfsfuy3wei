@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Профориентационный тест</title>
+  <style>
+    :root{
+      /* Палитра */
+      --bg-0:#000000; --bg-1:#0a0a0a;
+      --text:#e6e6e6; --muted:#6b6b6b;
+      --accent:#54e1ff; /* холодный неон */
+      --panel-0:#0f0f0f; --panel-1:#101010;
+      --line-0:#141414; --line-1:#1f2d2f;
+
+      --radius:14px;
+      --shadow-neon:0 0 .5px rgba(84,225,255,.6),0 0 12px rgba(84,225,255,.08),0 0 30px rgba(84,225,255,.04);
+      --focus-ring:0 0 0 2px rgba(84,225,255,.45),0 0 0 6px rgba(84,225,255,.08);
+      --space:clamp(12px,1.2vw + 8px,22px);
+    }
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,"Noto Sans";
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(84,225,255,.08), transparent 60%),
+        radial-gradient(900px 420px at 90% 12%, rgba(84,225,255,.06), transparent 60%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+      letter-spacing:.2px;
+    }
+    .wrap{max-width:960px;margin:0 auto; margin-top: 80px;padding:calc(var(--space)*2) var(--space) calc(var(--space)*3)}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(var(--space)*1.2);gap:12px}
+    .brand{font-weight:600;color:#bfefff;letter-spacing:.35px}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.5));
+      border:1px solid var(--line-0);
+      border-radius:var(--radius);
+      padding:clamp(16px,2vw + 10px,28px);
+      box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .card + .card{margin-top:var(--space)}
+    .legend{margin:0 0 8px;font-size:clamp(18px,1.1rem + .6vw,26px);color:#dfefff}
+    .hint{margin:4px 0 16px;color:var(--muted);font-size:13px}
+
+    /* Прогресс-бар */
+/* Закреплённый статус-бар */
+.progress-bar-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  padding: 12px 20px;
+  background: rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #141414;
+}
+
+/* Визуальная часть прогресс-бара */
+.progress {
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0e0e0e, #0a0a0a);
+  border: 1px solid #1a1a1a;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02),
+              0 0 0 .5px rgba(84, 225, 255, .15);
+}
+
+.progress__bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(84,225,255,.25), rgba(84,225,255,.6));
+  box-shadow: 0 0 12px rgba(84,225,255,.35),
+              0 0 30px rgba(84,225,255,.12);
+  transition: width .35s ease;
+}
+
+.progress__text {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 12px;
+  color: #6b6b6b;
+}
+
+    }   
+    .progress__text{margin-top:8px;text-align:right;font-size:12px;color:var(--muted)}
+
+    /* Сетка вариантов (чипы) */
+    .options{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+    .option{position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;cursor:pointer;user-select:none;background:linear-gradient(180deg,var(--panel-0),var(--panel-1));border:1px solid var(--line-0);box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 10px 24px rgba(0,0,0,.35);transition:border-color .2s ease,transform .08s ease,box-shadow .2s ease,background .2s ease}
+    .option:hover{border-color:var(--line-1)}
+    .option:active{transform:translateY(1px)}
+    .option input{position:absolute;inset:0;opacity:0;pointer-events:none}
+    .option__mark{width:18px;height:18px;border-radius:4px;flex:none;border:1px solid var(--line-1);background:#0d0d0d;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+    .option[data-kind="radio"] .option__mark{border-radius:50%}
+    .option__label{font-size:14px;color:var(--text)}
+    .option input:checked + .option__mark{
+      border-color:rgba(84,225,255,.65);
+      background:radial-gradient(50% 50% at 50% 50%, rgba(84,225,255,.45) 0%, rgba(84,225,255,.06) 70%, transparent 100%), #0b0b0b;
+      box-shadow:0 0 10px rgba(84,225,255,.35), inset 0 0 2px rgba(84,225,255,.6)
+    }
+    .option input:checked ~ .option__label{color:#f0fdff;text-shadow:0 0 8px rgba(84,225,255,.25)}
+    fieldset[data-max] .option.is-disabled{opacity:.6;pointer-events:none;filter:grayscale(.3)}
+
+    /* Пошаговость (JS добавляет .js на body) */
+    .js .step[hidden]{display:none !important}
+    .step{opacity:1;transform:translateY(0);transition:opacity .25s ease, transform .25s ease}
+    .step[data-enter]{opacity:0;transform:translateY(8px)}
+    .step.show{opacity:1;transform:translateY(0)}
+
+    .counter{color:var(--muted);font-size:12px;margin-top:8px}
+    .actions{display:flex;gap:10px;margin-top:12px}
+    .btn{
+      appearance:none;border:none;cursor:pointer;color:var(--text);
+      background:linear-gradient(180deg,var(--panel-0),#0b0b0b);
+      padding:10px 14px;border-radius:10px;border:1px solid var(--line-0);
+      box-shadow:0 0 0 1px rgba(84,225,255,.14) inset;transition:box-shadow .2s ease,border-color .2s ease,transform .1s ease
+    }
+    .btn:hover{border-color:var(--line-1);box-shadow:0 0 16px rgba(84,225,255,.08),0 0 32px rgba(84,225,255,.04)}
+    .btn:active{transform:translateY(1px)}
+    .btn--accent{
+      background:linear-gradient(180deg, rgba(84,225,255,.18), rgba(84,225,255,.06));
+      border-color:rgba(84,225,255,.45);box-shadow:0 0 32px rgba(84,225,255,.18);color:#e7fbff
+    }
+
+    .result{margin-top:var(--space);display:none}
+    .result.show{display:block}
+    .summary{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.4));border:1px solid var(--line-0);border-radius:var(--radius);padding:16px}
+    .summary h3{margin:0 0 10px;font-size:18px;color:#dfefff}
+    .tags{display:flex;flex-wrap:wrap;gap:8px}
+    .tag{padding:6px 10px;border:1px solid var(--line-1);border-radius:999px;font-size:12px;background:var(--panel-0)}
+    .footer-note{color:var(--muted);font-size:12px;margin-top:18px}
+
+    /* Фокус */
+    .option:focus-within,.btn:focus-visible,.progress:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+    @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">Профориентационный тест</div>
+      <div style="flex:1"></div>
+    </header>
+
+    <!-- Статус-бар -->
+    <!-- Фиксированный статус-бар -->
+    <div class="card progress-bar-fixed">
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Прогресс">
+        <div class="progress__bar" id="progressBar"></div>
+    </div>
+    <div class="progress__text" id="progressText">Шаг 1 из 6</div>
+    </div>
+
+
+    <form id="quizForm" class="quiz" autocomplete="off" novalidate>
+      <!-- 1 -->
+      <fieldset class="card step" data-step="1" data-type="single" data-min="1" data-max="1">
+        <legend class="legend">Что вам больше всего нравится делать?</legend>
+        <p class="hint">Выберите <b>1 вариант</b>.</p>
+        <div class="options">
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Техника, механика, ремонт" required>
+            <span class="option__mark" aria-hidden="true"></span><span class="option__label">Техника, механика, ремонт</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Помогать людям, здоровье и забота">
+            <span class="option__mark"></span><span class="option__label">Помогать людям, здоровье и забота</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Творчество, дизайн, тексты/медиа">
+            <span class="option__mark"></span><span class="option__label">Творчество, дизайн, тексты/медиа</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Природа, животные, сельское хозяйство">
+            <span class="option__mark"></span><span class="option__label">Природа, животные, сельское хозяйство</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Анализ, цифры, законы">
+            <span class="option__mark"></span><span class="option__label">Анализ, цифры, законы</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Бизнес, управление, продажи">
+            <span class="option__mark"></span><span class="option__label">Бизнес, управление, продажи</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Строительство, мастерство, работа руками">
+            <span class="option__mark"></span><span class="option__label">Строительство, мастерство, работа руками</span>
+          </label>
+          <label class="option" data-kind="radio">
+            <input type="radio" name="q1" value="Гастрономия, сервис, гостеприимство">
+            <span class="option__mark"></span><span class="option__label">Гастрономия, сервис, гостеприимство</span>
+          </label>
+        </div>
+        <div class="counter" aria-live="polite"></div>
+      </fieldset>
+
+      <!-- 2 -->
+      <fieldset class="card step" data-step="2" data-type="multi" data-min="1" data-max="2">
+        <legend class="legend">Где вам комфортнее работать?</legend>
+        <p class="hint">Можно выбрать <b>до 2 вариантов</b>.</p>
+        <div class="options">
+          <label class="option"><input type="checkbox" name="q2[]" value="Офис/деловой центр"><span class="option__mark"></span><span class="option__label">Офис/деловой центр</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="Медицинское учреждение"><span class="option__mark"></span><span class="option__label">Медицинское учреждение</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="Класс/аудитория"><span class="option__mark"></span><span class="option__label">Класс/аудитория</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="Лаборатория/НИИ"><span class="option__mark"></span><span class="option__label">Лаборатория/НИИ</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="Производство/мастерская/стройка"><span class="option__mark"></span><span class="option__label">Производство/мастерская/стройка</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="На природе/ферме/в поле"><span class="option__mark"></span><span class="option__label">На природе/ферме/в поле</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="Кухня/ресторан/отель"><span class="option__mark"></span><span class="option__label">Кухня/ресторан/отель</span></label>
+          <label class="option"><input type="checkbox" name="q2[]" value="В дороге/за рулём/на маршрутах"><span class="option__mark"></span><span class="option__label">В дороге/за рулём/на маршрутах</span></label>
+        </div>
+        <div class="counter" aria-live="polite"></div>
+      </fieldset>
+
+      <!-- 3 -->
+      <fieldset class="card step" data-step="3" data-type="multi" data-min="1" data-max="3">
+        <legend class="legend">Ваши сильные стороны?</legend>
+        <p class="hint">Можно выбрать <b>до 3 вариантов</b>.</p>
+        <div class="options">
+          <label class="option"><input type="checkbox" name="q3[]" value="Общение и эмпатия"><span class="option__mark"></span><span class="option__label">Общение и эмпатия</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Внимательность и точность"><span class="option__mark"></span><span class="option__label">Внимательность и точность</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Физическая выносливость и координация"><span class="option__mark"></span><span class="option__label">Физическая выносливость и координация</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Математика/логика/анализ"><span class="option__mark"></span><span class="option__label">Математика/логика/анализ</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Креативность и визуальное мышление"><span class="option__mark"></span><span class="option__label">Креативность и визуальное мышление</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Работа руками и с инструментом"><span class="option__mark"></span><span class="option__label">Работа руками и с инструментом</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Организация, дисциплина, ответственность"><span class="option__mark"></span><span class="option__label">Организация, дисциплина, ответственность</span></label>
+          <label class="option"><input type="checkbox" name="q3[]" value="Письмо, языки, подача информации"><span class="option__mark"></span><span class="option__label">Письмо, языки, подача информации</span></label>
+        </div>
+        <div class="counter" aria-live="polite"></div>
+      </fieldset>
+
+      <!-- 4 -->
+      <fieldset class="card step" data-step="4" data-type="multi" data-min="1" data-max="3">
+        <legend class="legend">Условия и ограничения</legend>
+        <p class="hint">Можно выбрать <b>до 3 вариантов</b>.</p>
+        <div class="options">
+          <label class="option"><input type="checkbox" name="q4[]" value="Готов(а) к сменам/дежурствам/стрессу"><span class="option__mark"></span><span class="option__label">Готов(а) к сменам/дежурствам/стрессу</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Не готов(а) к крови/медицинским вмешательствам"><span class="option__mark"></span><span class="option__label">Не готов(а) к крови/медицинским вмешательствам</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Важна удалёнка"><span class="option__mark"></span><span class="option__label">Важна удалёнка</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Нравится быть «в движении», на ногах"><span class="option__mark"></span><span class="option__label">Нравится быть «в движении», на ногах</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Ок с опасными условиями/формой/дисциплиной"><span class="option__mark"></span><span class="option__label">Ок с опасными условиями/формой/дисциплиной</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Нужен стабильный график 5/2"><span class="option__mark"></span><span class="option__label">Нужен стабильный график 5/2</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Готов(а) к командировкам/разъездам"><span class="option__mark"></span><span class="option__label">Готов(а) к командировкам/разъездам</span></label>
+          <label class="option"><input type="checkbox" name="q4[]" value="Есть права B и нравится водить"><span class="option__mark"></span><span class="option__label">Есть права B и нравится водить</span></label>
+        </div>
+        <div class="counter" aria-live="polite"></div>
+      </fieldset>
+
+      <!-- 5 -->
+      <fieldset class="card step" data-step="5" data-type="single" data-min="1" data-max="1">
+        <legend class="legend">Сколько готовы учиться для входа в профессию?</legend>
+        <p class="hint">Выберите <b>1 вариант</b>.</p>
+        <div class="options">
+          <label class="option" data-kind="radio"><input type="radio" name="q5" value="1–3 месяца"><span class="option__mark"></span><span class="option__label">1–3 месяца</span></label>
+          <label class="option" data-kind="radio"><input type="radio" name="q5" value="6–12 месяцев"><span class="option__mark"></span><span class="option__label">6–12 месяцев</span></label>
+          <label class="option" data-kind="radio"><input type="radio" name="q5" value="2–6 лет"><span class="option__mark"></span><span class="option__label">2–6 лет</span></label>
+        </div>
+        <div class="counter" aria-live="polite"></div>
+      </fieldset>
+
+      <!-- 6 -->
+      <fieldset class="card step" data-step="6" data-type="multi" data-min="1" data-max="2">
+        <legend class="legend">Что важнее всего в работе?</legend>
+        <p class="hint">Можно выбрать <b>до 2 вариантов</b>.</p>
+        <div class="options">
+          <label class="option"><input type="checkbox" name="q6[]" value="Стабильность и соцпакет"><span class="option__mark"></span><span class="option__label">Стабильность и соцпакет</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Высокий доход и рост"><span class="option__mark"></span><span class="option__label">Высокий доход и рост</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Польза людям/общественный смысл"><span class="option__mark"></span><span class="option__label">Польза людям/общественный смысл</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Свобода и творчество"><span class="option__mark"></span><span class="option__label">Свобода и творчество</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Руководство и влияние"><span class="option__mark"></span><span class="option__label">Руководство и влияние</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Природа/животные"><span class="option__mark"></span><span class="option__label">Природа/животные</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Независимость/свой бизнес"><span class="option__mark"></span><span class="option__label">Независимость/свой бизнес</span></label>
+          <label class="option"><input type="checkbox" name="q6[]" value="Технологии/инновации"><span class="option__mark"></span><span class="option__label">Технологии/инновации</span></label>
+        </div>
+        <div class="counter" aria-live="polite"></div>
+      </fieldset>
+
+      <!-- 7 (опционально) -->
+      <fieldset class="card step" data-step="7" data-type="text" data-optional="true">
+        <legend class="legend">Коротко опишите работу мечты</legend>
+        <p class="hint">1–2 предложения</p>
+        <textarea id="q7" name="q7" rows="3" placeholder="Например: «Хочу создавать понятные цифровые продукты и работать в гибкой команде»" style="width:100%;resize:vertical;border-radius:12px;border:1px solid var(--line-0);background:linear-gradient(180deg,var(--panel-0),var(--panel-1));color:var(--text);padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)"></textarea>
+        <div class="actions">
+          <button class="btn btn--accent" type="button" id="seeResultBtn">Показать результат</button>
+        </div>
+      </fieldset>
+    </form>
+
+    <!-- Результат -->
+    <section id="result" class="result card">
+      <h2 class="legend">Готово!</h2>
+      <div class="summary">
+        <h3>Ваши ответы</h3>
+        <div id="answersList" class="tags"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button" id="resetBtn">Пройти ещё раз</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Небольшая логика для шагов, лимитов и прогресса
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('js');
+
+      const form = document.getElementById('quizForm');
+      const steps = Array.from(form.querySelectorAll('fieldset.step'));
+      const requiredSteps = steps.filter(s => s.dataset.optional !== 'true');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      const seeResultBtn = document.getElementById('seeResultBtn');
+
+      // Изначально скрываем всё, кроме первого
+      steps.forEach((fs, i) => { if (i > 0) fs.hidden = true; });
+
+      // Подсчёты и ограничения выбора
+      const updateCounter = (fs) => {
+        const counterEl = fs.querySelector('.counter');
+        if (!counterEl) return;
+        const type = fs.dataset.type;
+        const max = +fs.dataset.max || 0;
+        const inputs = fs.querySelectorAll('input[type=radio], input[type=checkbox]');
+        const count = Array.from(inputs).filter(i => i.checked).length;
+        if (type === 'single') counterEl.textContent = count ? 'Выбрано: 1/1' : 'Выберите 1 вариант';
+        else if (type === 'multi') counterEl.textContent = `Выбрано: ${count}/${max}`;
+        else counterEl.textContent = '';
+      };
+
+      const enforceMax = (fs) => {
+        if (fs.dataset.type !== 'multi') return;
+        const max = +fs.dataset.max || Infinity;
+        const boxes = fs.querySelectorAll('input[type=checkbox]');
+        const checked = Array.from(boxes).filter(i => i.checked);
+        boxes.forEach(b => {
+          const card = b.closest('.option');
+          if (!b.checked && checked.length >= max) {
+            b.disabled = true;
+            if (card) card.classList.add('is-disabled');
+          } else {
+            b.disabled = false;
+            if (card) card.classList.remove('is-disabled');
+          }
+        });
+      };
+
+      const isValid = (fs) => {
+        const type = fs.dataset.type;
+        const min = parseInt(fs.dataset.min || '0', 10);
+        const max = parseInt(fs.dataset.max || '999', 10);
+        const inputs = fs.querySelectorAll('input[type=radio], input[type=checkbox]');
+        const count = Array.from(inputs).filter(i => i.checked).length;
+        if (type === 'single') return count >= 1;
+        if (type === 'multi') return count >= min && count <= max;
+        return true; // текст опционален
+      };
+
+      const fillSummary = () => {
+        const list = document.getElementById('answersList');
+        list.innerHTML = '';
+        const labels = Array.from(form.querySelectorAll('input:checked')).map(i => {
+          const el = i.closest('.option')?.querySelector('.option__label');
+          return el ? el.textContent.trim() : i.value;
+        });
+        labels.forEach(txt => {
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = txt;
+          list.appendChild(tag);
+        });
+        const dream = form.querySelector('#q7')?.value.trim();
+        // Добавим/обновим подпись про работу мечты
+        let dreamBox = document.getElementById('dreamBox');
+        if (!dreamBox) {
+          dreamBox = document.createElement('p');
+          dreamBox.id = 'dreamBox';
+          dreamBox.className = 'footer-note';
+          list.parentElement.appendChild(dreamBox);
+        }
+        dreamBox.textContent = dream ? `Работа мечты: ${dream}` : '';
+      };
+
+      const updateProgress = (answered) => {
+        const total = requiredSteps.length;
+        const percent = Math.round((answered / total) * 100);
+        progressBar.style.width = percent + '%';
+        progressBar.parentElement.setAttribute('aria-valuenow', String(percent));
+        progressText.textContent = answered < total ? `Шаг ${answered + 1} из ${total}` : `Готово: ${total} из ${total}`;
+      };
+
+      const updateVisibility = () => {
+        let revealNext = true;
+        let answered = 0;
+
+        for (let i = 0; i < steps.length; i++) {
+          const fs = steps[i];
+          const required = fs.dataset.optional !== 'true';
+
+          if (revealNext) {
+            fs.hidden = false;
+            if (required && isValid(fs)) {
+              answered++;
+              revealNext = true;
+            } else if (required) {
+              revealNext = false;
+            } else {
+              // опциональный шаг можно показать, если всё обязательное пройдено
+              revealNext = true;
+            }
+          } else {
+            fs.hidden = true;
+          }
+        }
+
+        updateProgress(answered);
+
+        // Показать результат, когда все обязательные заполнены
+        const result = document.getElementById('result');
+        if (answered >= requiredSteps.length) {
+          // Покажем опциональный шаг (если был скрыт) и результат
+          const optional = steps.find(s => s.dataset.optional === 'true');
+          if (optional) optional.hidden = false;
+          document.getElementById('result').classList.add('show');
+          fillSummary();
+        } else {
+          document.getElementById('result').classList.remove('show');
+        }
+      };
+
+      // Первичная инициализация
+      steps.forEach(fs => { updateCounter(fs); enforceMax(fs); });
+      updateVisibility();
+
+      // Слушатели
+      form.addEventListener('change', (e) => {
+        const fs = e.target.closest('fieldset');
+        if (fs) { enforceMax(fs); updateCounter(fs); }
+        updateVisibility();
+      });
+
+      // Кнопки
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        form.reset();
+        steps.forEach(fs => {
+          fs.querySelectorAll('input[type=checkbox]').forEach(i => {
+            i.disabled = false;
+            i.closest('.option')?.classList.remove('is-disabled');
+          });
+          updateCounter(fs);
+        });
+        // скрыть после сброса
+        steps.forEach((fs, i) => { fs.hidden = i > 0; });
+        document.getElementById('result').classList.remove('show');
+        updateVisibility();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      seeResultBtn?.addEventListener('click', () => {
+        fillSummary();
+        document.getElementById('result').classList.add('show');
+        document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>
