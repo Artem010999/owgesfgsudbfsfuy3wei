@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_BACKEND_URL=http://backend:8000
+      - VITE_AI_URL=http://ai-service:8500
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - AI_SERVICE_URL=http://ai-service:8500
+    networks:
+      - app-network
+
+  ai-service:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile.WorkAI
+    container_name: ai-service
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

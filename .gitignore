@@ -1,0 +1,21 @@
+# Global ignores
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+.env
+.env.*
+
+# IDE metadata
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+
+# Project-specific large data
+ai/all_vacancies.json
+ai/raw_data/
+
+
