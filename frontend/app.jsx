@@ -189,6 +189,7 @@ function App() {
     }
     return 'dark';
   });
+  const logRef = useRef(null);
 
   const resetSession = () => {
     setChat([]);
@@ -225,6 +226,42 @@ function App() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
+
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll('.tilt-follow'));
+    if (!elements.length) {
+      return;
+    }
+
+    const maxTilt = 4;
+
+    const handleMouseMove = (event) => {
+      const { innerWidth, innerHeight } = window;
+      const percentX = event.clientX / innerWidth - 0.5;
+      const percentY = event.clientY / innerHeight - 0.5;
+
+      elements.forEach((el) => {
+        const depth = Number(el.dataset.tiltDepth || 1);
+        const tiltX = -(percentY * maxTilt * depth);
+        const tiltY = percentX * maxTilt * depth;
+        el.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+      });
+    };
+
+    const resetTilt = () => {
+      elements.forEach((el) => {
+        el.style.transform = '';
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', resetTilt);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', resetTilt);
+    };
+  }, []);
 
   return (
     <div id="app">
@@ -312,9 +349,9 @@ function App() {
       </header>
 
       <main className="main-grid" id="main-content" tabIndex={-1} aria-live="polite">
-        <section className="chat-panel">
+        <section className="chat-panel glass tilt-follow" data-tilt-depth="1">
           <h3 className="chat-title">Чат ИИ</h3>
-          <ChatLog items={chat} />
+          <ChatLog items={chat} logRef={logRef} />
           <ChatInput onSend={async (text) => {
             if (!text.trim()) return;
             setChat(prev => [...prev, { role: "user", text }]);
@@ -333,11 +370,11 @@ function App() {
             } catch(e) {
               setChat(prev => [...prev, { role: "bot", text: "Ошибка соединения с сервером" }]);
             }
-          }} />
+          }} logRef={logRef} />
         </section>
 
         <section className="right-grid">
-          <div className="card-carousel">
+          <div className="card-carousel tilt-follow" data-tilt-depth="0.8">
             <div className="carousel-title">Твоя карточка профессии :D</div>
             <button
               className="arrow left"
@@ -373,15 +410,13 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);
 
 // Chat subcomponents
-function ChatLog({ items }) {
-  const logRef = useRef(null);
-
+function ChatLog({ items, logRef }) {
   useEffect(() => {
-    const container = logRef.current;
+    const container = logRef?.current;
     if (container) {
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }
-  }, [items]);
+  }, [items, logRef]);
 
   return (
     <div className="chat-log" ref={logRef}>
@@ -394,20 +429,30 @@ function ChatLog({ items }) {
   );
 }
 
-function ChatInput({ onSend }) {
+function ChatInput({ onSend, logRef }) {
   const [value, setValue] = useState('');
   const textareaRef = useRef(null);
   const maxRows = 4;
+
+  const ensureLogScroll = () => {
+    const container = logRef?.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  };
 
   const autoResize = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = 'auto';
     const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 20;
-    const maxHeight = lineHeight * maxRows + parseFloat(getComputedStyle(textarea).paddingTop) + parseFloat(getComputedStyle(textarea).paddingBottom);
+    const maxHeight = lineHeight * maxRows +
+      parseFloat(getComputedStyle(textarea).paddingTop) +
+      parseFloat(getComputedStyle(textarea).paddingBottom);
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${newHeight}px`;
     textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    ensureLogScroll();
   };
 
   useEffect(() => {
@@ -424,6 +469,7 @@ function ChatInput({ onSend }) {
       textarea.style.height = 'auto';
       textarea.style.overflowY = 'hidden';
     }
+    ensureLogScroll();
   };
 
   return (
@@ -486,7 +532,7 @@ function ImagePanel({ url }) {
   const [loaded, setLoaded] = useState(false);
   useEffect(()=>{ setLoaded(false); }, [url]);
   return (
-    <div className="image-panel">
+    <div className="image-panel tilt-follow" data-tilt-depth="0.6">
       {!loaded && <NoisePlaceholder waiting={!url} />}
       {url ? (
         <img

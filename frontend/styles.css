@@ -115,6 +115,13 @@ body::after {
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
+  perspective: 1200px;
+}
+
+.tilt-follow {
+  transition: transform 0.6s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 /* Header */
@@ -297,7 +304,8 @@ body::after {
 .chat-log {
   overflow-y: auto;
   overflow-x: hidden;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: clamp(12px, 1.8vw, 20px);
   padding-right: clamp(6px, 0.8vw, 10px);
   font-size: clamp(1rem, 1.6vw, 1.2rem);
@@ -320,6 +328,11 @@ body::after {
 .chat-msg.bot {
   border-color: var(--chat-border);
   background: var(--chat-bot-bg);
+  margin-right: 25%;
+}
+
+.chat-msg.user {
+  margin-left: 25%;
 }
 
 .chat-input-row {
