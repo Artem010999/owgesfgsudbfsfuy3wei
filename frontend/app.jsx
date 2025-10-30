@@ -374,8 +374,17 @@ root.render(<App />);
 
 // Chat subcomponents
 function ChatLog({ items }) {
+  const logRef = useRef(null);
+
+  useEffect(() => {
+    const container = logRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+  }, [items]);
+
   return (
-    <div className="chat-log">
+    <div className="chat-log" ref={logRef}>
       {items.map((m, i) => (
         <div key={i} className={"chat-msg " + (m.role === "bot" ? "bot" : "user")}>
           {m.text}

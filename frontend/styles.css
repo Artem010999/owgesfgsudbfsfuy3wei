@@ -454,8 +454,8 @@ body::after {
   font-size: clamp(1.1rem, 2vw, 1.4rem);
 }
 
-.arrow.left { left: clamp(6px, 1vw, 14px); }
-.arrow.right { right: clamp(6px, 1vw, 14px); }
+.arrow.left { left: clamp(24px, 3vw, 30px); }
+.arrow.right { right: clamp(24px, 3vw, 30px); }
 .arrow[disabled] { opacity: 0.35; pointer-events: none; }
 
 /* Image panel with placeholder */
@@ -659,7 +659,7 @@ body::after {
   background: linear-gradient(180deg, var(--button-gradient-top), var(--button-gradient-bottom));
   padding: clamp(14px, 2vw, 20px) clamp(24px, 3vw, 32px);
   border-radius: 14px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.4px;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
