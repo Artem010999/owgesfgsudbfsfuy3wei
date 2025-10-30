@@ -4,145 +4,537 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Профориентационный тест</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Russo+One&display=swap" rel="stylesheet" />
+  <script>
+    (function() {
+      try {
+        var stored = localStorage.getItem('app-theme');
+        if (stored === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (error) {
+        // ignore
+      }
+    })();
+  </script>
   <style>
-    :root{
-      /* Палитра */
-      --bg-0:#000000; --bg-1:#0a0a0a;
-      --text:#e6e6e6; --muted:#6b6b6b;
-      --accent:#54e1ff; /* холодный неон */
-      --panel-0:#0f0f0f; --panel-1:#101010;
-      --line-0:#141414; --line-1:#1f2d2f;
-
-      --radius:14px;
-      --shadow-neon:0 0 .5px rgba(84,225,255,.6),0 0 12px rgba(84,225,255,.08),0 0 30px rgba(84,225,255,.04);
-      --focus-ring:0 0 0 2px rgba(84,225,255,.45),0 0 0 6px rgba(84,225,255,.08);
-      --space:clamp(12px,1.2vw + 8px,22px);
-    }
-    html,body{height:100%}
-    body{
-      margin:0;
-      color:var(--text);
-      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,"Noto Sans";
-      background:
+    :root {
+      color-scheme: dark;
+      --bg-0: #000000;
+      --bg-1: #0a0a0a;
+      --text: #e6e6e6;
+      --muted: #6b6b6b;
+      --accent: #54e1ff;
+      --panel-0: #0f0f0f;
+      --panel-1: #101010;
+      --line-0: #141414;
+      --line-1: #1f2d2f;
+      --radius: 14px;
+      --shadow-neon: 0 0 .5px rgba(84,225,255,.6),0 0 12px rgba(84,225,255,.08),0 0 30px rgba(84,225,255,.04);
+      --focus-ring: 0 0 0 2px rgba(84,225,255,.45),0 0 0 6px rgba(84,225,255,.08);
+      --space: clamp(12px, 1.2vw + 8px, 22px);
+      --body-gradient:
         radial-gradient(1200px 600px at 10% -10%, rgba(84,225,255,.08), transparent 60%),
         radial-gradient(900px 420px at 90% 12%, rgba(84,225,255,.06), transparent 60%),
         linear-gradient(180deg, var(--bg-0), var(--bg-1));
-      letter-spacing:.2px;
+      --card-bg: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.5));
+      --card-border: var(--line-0);
+      --card-shadow: 0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+      --legend-color: #dfefff;
+      --app-bar-bg: rgba(10, 10, 10, 0.9);
+      --app-bar-border: #141414;
+      --progress-track-bg: linear-gradient(180deg, #0e0e0e, #0a0a0a);
+      --progress-track-border: #1a1a1a;
+      --progress-fill-bg: linear-gradient(90deg, rgba(84,225,255,.25), rgba(84,225,255,.6));
+      --progress-fill-shadow: 0 0 12px rgba(84,225,255,.35), 0 0 30px rgba(84,225,255,.12);
+      --progress-text-color: #6b6b6b;
+      --option-bg: linear-gradient(180deg, var(--panel-0), var(--panel-1));
+      --option-border: var(--line-0);
+      --option-hover-border: var(--line-1);
+      --option-mark-bg: #0d0d0d;
+      --option-mark-border: var(--line-1);
+      --option-checked-bg: radial-gradient(50% 50% at 50% 50%, rgba(84,225,255,.45) 0%, rgba(84,225,255,.06) 70%, transparent 100%), #0b0b0b;
+      --option-checked-glow: 0 0 10px rgba(84,225,255,.35), inset 0 0 2px rgba(84,225,255,.6);
+      --option-label-checked-color: #f0fdff;
+      --btn-bg: linear-gradient(180deg, var(--panel-0), #0b0b0b);
+      --btn-border: var(--line-0);
+      --btn-hover-border: var(--line-1);
+      --btn-shadow: 0 0 0 1px rgba(84,225,255,.14) inset;
+      --btn-accent-bg: linear-gradient(180deg, rgba(84,225,255,.18), rgba(84,225,255,.06));
+      --btn-accent-border: rgba(84,225,255,.45);
+      --btn-accent-shadow: 0 0 32px rgba(84,225,255,.18);
+      --summary-bg: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.4));
+      --summary-border: var(--line-0);
+      --tag-bg: var(--panel-0);
+      --tag-border: var(--line-1);
+      --footer-note-color: var(--muted);
+      --control-btn-bg: rgba(20, 24, 32, 0.82);
+      --control-btn-border: var(--line-0);
+      --control-btn-hover-border: var(--accent);
     }
-    .wrap{max-width:960px;margin:0 auto; margin-top: 80px;padding:calc(var(--space)*2) var(--space) calc(var(--space)*3)}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(var(--space)*1.2);gap:12px}
-    .brand{font-weight:600;color:#bfefff;letter-spacing:.35px}
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.5));
-      border:1px solid var(--line-0);
-      border-radius:var(--radius);
-      padding:clamp(16px,2vw + 10px,28px);
-      box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg-0: #f2f6ff;
+      --bg-1: #ffffff;
+      --text: #1d2733;
+      --muted: #60748c;
+      --accent: #1f7ea0;
+      --panel-0: rgba(255,255,255,0.98);
+      --panel-1: rgba(237,245,255,0.96);
+      --line-0: rgba(170,195,220,0.85);
+      --line-1: rgba(90,150,205,0.65);
+      --shadow-neon: 0 0 .5px rgba(31,126,160,.45),0 0 12px rgba(31,126,160,.18),0 0 30px rgba(31,126,160,.08);
+      --focus-ring: 0 0 0 2px rgba(31,126,160,.35),0 0 0 6px rgba(31,126,160,.12);
+      --body-gradient:
+        radial-gradient(1200px 620px at 12% -10%, rgba(84,180,255,.18), transparent 68%),
+        radial-gradient(900px 420px at 88% 12%, rgba(31,126,160,.22), transparent 62%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+      --card-bg: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(235,244,255,0.94));
+      --card-border: rgba(170,195,220,0.85);
+      --card-shadow: 0 12px 32px rgba(38, 64, 120, 0.18), inset 0 1px 0 rgba(255,255,255,0.75);
+      --legend-color: #214663;
+      --app-bar-bg: rgba(248, 252, 255, 0.94);
+      --app-bar-border: rgba(180, 205, 235, 0.8);
+      --progress-track-bg: linear-gradient(180deg, rgba(220,232,245,0.95), rgba(205,222,240,0.92));
+      --progress-track-border: rgba(180,205,235,0.85);
+      --progress-fill-bg: linear-gradient(90deg, rgba(31,126,160,0.32), rgba(31,126,160,0.62));
+      --progress-fill-shadow: 0 0 18px rgba(31,126,160,0.28), 0 0 26px rgba(31,126,160,0.18);
+      --progress-text-color: rgba(96,114,136,0.95);
+      --option-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(239,247,255,0.95));
+      --option-border: rgba(180,205,235,0.85);
+      --option-hover-border: rgba(31,126,160,0.45);
+      --option-mark-bg: rgba(240,248,255,0.92);
+      --option-mark-border: rgba(128,170,212,0.75);
+      --option-checked-bg: radial-gradient(50% 50% at 50% 50%, rgba(31,126,160,0.38) 0%, rgba(31,126,160,0.1) 70%, transparent 100%), rgba(240,248,255,0.96);
+      --option-checked-glow: 0 0 12px rgba(31,126,160,0.24), inset 0 0 2px rgba(31,126,160,0.5);
+      --option-label-checked-color: #135a78;
+      --btn-bg: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(237,245,255,0.94));
+      --btn-border: rgba(170,195,220,0.85);
+      --btn-hover-border: rgba(31,126,160,0.5);
+      --btn-shadow: 0 0 0 1px rgba(31,126,160,0.12) inset;
+      --btn-accent-bg: linear-gradient(180deg, rgba(31,126,160,0.18), rgba(31,126,160,0.08));
+      --btn-accent-border: rgba(31,126,160,0.55);
+      --btn-accent-shadow: 0 0 32px rgba(31,126,160,0.15);
+      --summary-bg: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(234,243,255,0.9));
+      --summary-border: rgba(180,205,235,0.85);
+      --tag-bg: rgba(235,243,255,0.95);
+      --tag-border: rgba(170,195,220,0.85);
+      --footer-note-color: rgba(96,114,136,0.95);
+      --control-btn-bg: rgba(248, 252, 255, 0.92);
+      --control-btn-border: rgba(170,195,220,0.85);
+      --control-btn-hover-border: rgba(31,126,160,0.55);
     }
-    .card + .card{margin-top:var(--space)}
-    .legend{margin:0 0 8px;font-size:clamp(18px,1.1rem + .6vw,26px);color:#dfefff}
-    .hint{margin:4px 0 16px;color:var(--muted);font-size:13px}
-
-    /* Прогресс-бар */
-/* Закреплённый статус-бар */
-.progress-bar-fixed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  padding: 12px 20px;
-  background: rgba(10, 10, 10, 0.9);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid #141414;
-}
-
-/* Визуальная часть прогресс-бара */
-.progress {
-  height: 14px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: linear-gradient(180deg, #0e0e0e, #0a0a0a);
-  border: 1px solid #1a1a1a;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .02),
-              0 0 0 .5px rgba(84, 225, 255, .15);
-}
-
-.progress__bar {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(84,225,255,.25), rgba(84,225,255,.6));
-  box-shadow: 0 0 12px rgba(84,225,255,.35),
-              0 0 30px rgba(84,225,255,.12);
-  transition: width .35s ease;
-}
-
-.progress__text {
-  margin-top: 8px;
-  text-align: right;
-  font-size: 12px;
-  color: #6b6b6b;
-}
-
-    }   
-    .progress__text{margin-top:8px;text-align:right;font-size:12px;color:var(--muted)}
-
-    /* Сетка вариантов (чипы) */
-    .options{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
-    .option{position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;cursor:pointer;user-select:none;background:linear-gradient(180deg,var(--panel-0),var(--panel-1));border:1px solid var(--line-0);box-shadow:0 1px 0 rgba(255,255,255,.02) inset,0 10px 24px rgba(0,0,0,.35);transition:border-color .2s ease,transform .08s ease,box-shadow .2s ease,background .2s ease}
-    .option:hover{border-color:var(--line-1)}
-    .option:active{transform:translateY(1px)}
-    .option input{position:absolute;inset:0;opacity:0;pointer-events:none}
-    .option__mark{width:18px;height:18px;border-radius:4px;flex:none;border:1px solid var(--line-1);background:#0d0d0d;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
-    .option[data-kind="radio"] .option__mark{border-radius:50%}
-    .option__label{font-size:14px;color:var(--text)}
-    .option input:checked + .option__mark{
-      border-color:rgba(84,225,255,.65);
-      background:radial-gradient(50% 50% at 50% 50%, rgba(84,225,255,.45) 0%, rgba(84,225,255,.06) 70%, transparent 100%), #0b0b0b;
-      box-shadow:0 0 10px rgba(84,225,255,.35), inset 0 0 2px rgba(84,225,255,.6)
+    *, *::before, *::after {
+      box-sizing: border-box;
     }
-    .option input:checked ~ .option__label{color:#f0fdff;text-shadow:0 0 8px rgba(84,225,255,.25)}
-    fieldset[data-max] .option.is-disabled{opacity:.6;pointer-events:none;filter:grayscale(.3)}
-
-    /* Пошаговость (JS добавляет .js на body) */
-    .js .step[hidden]{display:none !important}
-    .step{opacity:1;transform:translateY(0);transition:opacity .25s ease, transform .25s ease}
-    .step[data-enter]{opacity:0;transform:translateY(8px)}
-    .step.show{opacity:1;transform:translateY(0)}
-
-    .counter{color:var(--muted);font-size:12px;margin-top:8px}
-    .actions{display:flex;gap:10px;margin-top:12px}
-    .btn{
-      appearance:none;border:none;cursor:pointer;color:var(--text);
-      background:linear-gradient(180deg,var(--panel-0),#0b0b0b);
-      padding:10px 14px;border-radius:10px;border:1px solid var(--line-0);
-      box-shadow:0 0 0 1px rgba(84,225,255,.14) inset;transition:box-shadow .2s ease,border-color .2s ease,transform .1s ease
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Jura', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Noto Sans', 'Helvetica Neue';
+      background: var(--bg-1);
+      color: var(--text);
+      transition: background 280ms ease, color 200ms ease;
     }
-    .btn:hover{border-color:var(--line-1);box-shadow:0 0 16px rgba(84,225,255,.08),0 0 32px rgba(84,225,255,.04)}
-    .btn:active{transform:translateY(1px)}
-    .btn--accent{
-      background:linear-gradient(180deg, rgba(84,225,255,.18), rgba(84,225,255,.06));
-      border-color:rgba(84,225,255,.45);box-shadow:0 0 32px rgba(84,225,255,.18);color:#e7fbff
+    body {
+      letter-spacing: .2px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
-
-    .result{margin-top:var(--space);display:none}
-    .result.show{display:block}
-    .summary{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.4));border:1px solid var(--line-0);border-radius:var(--radius);padding:16px}
-    .summary h3{margin:0 0 10px;font-size:18px;color:#dfefff}
-    .tags{display:flex;flex-wrap:wrap;gap:8px}
-    .tag{padding:6px 10px;border:1px solid var(--line-1);border-radius:999px;font-size:12px;background:var(--panel-0)}
-    .footer-note{color:var(--muted);font-size:12px;margin-top:18px}
-
-    /* Фокус */
-    .option:focus-within,.btn:focus-visible,.progress:focus-visible{outline:none;box-shadow:var(--focus-ring)}
-    @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    button, input, select, textarea {
+      font-family: 'Jura', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Noto Sans', 'Helvetica Neue';
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      margin-top: 80px;
+      padding: calc(var(--space) * 2) var(--space) calc(var(--space) * 3);
+      width: 100%;
+    }
+    .corner-controls {
+      position: fixed;
+      top: clamp(70px, 10vw, 110px);
+      left: clamp(22px, 4vw, 42px);
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 2vw, 18px);
+    }
+    .corner-btn {
+      appearance: none;
+      border: 1px solid var(--control-btn-border);
+      background: var(--control-btn-bg);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      padding: clamp(10px, 1.6vw, 14px) clamp(16px, 2.2vw, 24px);
+      font-weight: 600;
+      font-size: clamp(0.9rem, 1.4vw, 1.05rem);
+      cursor: pointer;
+      transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 120ms ease;
+    }
+    .corner-btn .icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .corner-btn:hover {
+      border-color: var(--control-btn-hover-border);
+      transform: translateY(-1px);
+    }
+    .corner-btn:active {
+      transform: translateY(0);
+    }
+    .corner-btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: calc(var(--space) * 1.2);
+      gap: clamp(12px, 1.4vw, 20px);
+      padding-top: clamp(36px, 6vw, 60px);
+    }
+    .brand {
+      font-weight: 600;
+      color: var(--legend-color);
+      letter-spacing: .35px;
+      font-family: 'Russo One', 'Jura', sans-serif;
+      font-size: clamp(20px, 1.1rem + .6vw, 28px);
+    }
+    .control-btn {
+      appearance: none;
+      border: 1px solid var(--control-btn-border);
+      background: var(--control-btn-bg);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, transform 120ms ease;
+      white-space: nowrap;
+    }
+    .control-btn .icon {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+    .control-btn:hover {
+      border-color: var(--control-btn-hover-border);
+      transform: translateY(-1px);
+    }
+    .control-btn:active {
+      transform: translateY(0);
+    }
+    .control-btn:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: clamp(16px, 2vw + 10px, 28px);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(6px);
+    }
+    fieldset.card {
+      margin: 0;
+      border: none;
+      position: relative;
+      overflow: visible;
+    }
+    fieldset.card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--card-border);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    fieldset.card legend {
+      display: block;
+      padding: 0;
+      margin-top: clamp(4px, 0.6vw, 10px);
+      margin-bottom: clamp(18px, 2.2vw, 26px);
+      position: relative;
+      top: clamp(22px, 3.4vw, 30px);
+    }
+    .card + .card {
+      margin-top: var(--space);
+    }
+    .legend {
+      margin: 0 0 8px;
+      font-size: clamp(18px, 1.1rem + .6vw, 26px);
+      color: var(--legend-color);
+      font-family: 'Russo One', 'Jura', sans-serif;
+    }
+    .hint {
+      margin: 4px 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .progress-bar-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 999;
+      padding: 12px 20px;
+      background: var(--app-bar-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--app-bar-border);
+      transition: background 200ms ease, border-color 200ms ease;
+    }
+    .progress {
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--progress-track-bg);
+      border: 1px solid var(--progress-track-border);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    :root[data-theme="light"] .progress {
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.55);
+    }
+    .progress__bar {
+      width: 0%;
+      height: 100%;
+      background: var(--progress-fill-bg);
+      box-shadow: var(--progress-fill-shadow);
+      transition: width .35s ease;
+    }
+    .progress__text {
+      margin-top: 8px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--progress-text-color);
+    }
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .option {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--option-bg);
+      border: 1px solid var(--option-border);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      transition: border-color .2s ease, transform .08s ease, box-shadow .2s ease, background .2s ease;
+    }
+    :root[data-theme="light"] .option {
+      box-shadow: 0 8px 22px rgba(35, 72, 120, 0.12);
+    }
+    .option:hover {
+      border-color: var(--option-hover-border);
+    }
+    .option:active {
+      transform: translateY(1px);
+    }
+    .option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .option__mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      flex: none;
+      border: 1px solid var(--option-mark-border);
+      background: var(--option-mark-bg);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .option[data-kind="radio"] .option__mark {
+      border-radius: 50%;
+    }
+    .option__label {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .option input:checked + .option__mark {
+      border-color: var(--accent);
+      background: var(--option-checked-bg);
+      box-shadow: var(--option-checked-glow);
+    }
+    .option input:checked ~ .option__label {
+      color: var(--option-label-checked-color);
+      text-shadow: 0 0 8px rgba(84,225,255,.25);
+    }
+    :root[data-theme="light"] .option input:checked ~ .option__label {
+      text-shadow: 0 0 10px rgba(31,126,160,0.15);
+    }
+    fieldset[data-max] .option.is-disabled {
+      opacity: .6;
+      pointer-events: none;
+      filter: grayscale(.3);
+    }
+    .js .step[hidden] {
+      display: none !important;
+    }
+    .step {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .step[data-enter] {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    .step.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .counter {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text);
+      background: var(--btn-bg);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--btn-border);
+      box-shadow: var(--btn-shadow);
+      transition: box-shadow .2s ease, border-color .2s ease, transform .1s ease;
+      font-weight: 600;
+    }
+    .btn:hover {
+      border-color: var(--btn-hover-border);
+      box-shadow: 0 0 16px rgba(84,225,255,.08), 0 0 32px rgba(84,225,255,.04);
+    }
+    :root[data-theme="light"] .btn:hover {
+      box-shadow: 0 0 16px rgba(31,126,160,0.12), 0 0 32px rgba(31,126,160,0.08);
+    }
+    .btn:active {
+      transform: translateY(1px);
+    }
+    .btn--accent {
+      background: var(--btn-accent-bg);
+      border-color: var(--btn-accent-border);
+      box-shadow: var(--btn-accent-shadow);
+      color: #e7fbff;
+    }
+    :root[data-theme="light"] .btn--accent {
+      color: #0f4257;
+    }
+    textarea {
+      width: 100%;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--line-0);
+      background: linear-gradient(180deg, var(--panel-0), var(--panel-1));
+      color: var(--text);
+      padding: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    :root[data-theme="light"] textarea {
+      border-color: rgba(170,195,220,0.85);
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(239,247,255,0.96));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+    }
+    .result {
+      margin-top: var(--space);
+      display: none;
+    }
+    .result.show {
+      display: block;
+    }
+    .summary {
+      background: var(--summary-bg);
+      border: 1px solid var(--summary-border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .summary h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--legend-color);
+      font-family: 'Russo One', 'Jura', sans-serif;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag {
+      padding: 6px 10px;
+      border: 1px solid var(--tag-border);
+      border-radius: 999px;
+      font-size: 12px;
+      background: var(--tag-bg);
+      color: var(--text);
+    }
+    .footer-note {
+      color: var(--footer-note-color);
+      font-size: 12px;
+      margin-top: 18px;
+    }
+    input[type="range"] {
+      accent-color: var(--accent);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="corner-controls">
+    <a href="./index.html" class="corner-btn corner-btn--back" aria-label="Назад на главную" onclick="try{localStorage.setItem('overlay-dismissed','true');}catch(e){}">
+      <span class="icon" aria-hidden="true">⟵</span>
+      <span class="label">Назад</span>
+    </a>
+  </div>
   <div class="wrap">
     <header>
       <div class="brand">Профориентационный тест</div>
-      <div style="flex:1"></div>
     </header>
 
     <!-- Статус-бар -->
@@ -198,7 +590,7 @@
       </fieldset>
 
       <!-- 2 -->
-      <fieldset class="card step" data-step="2" data-type="multi" data-min="1" data-max="2">
+      <fieldset class="card step" data-step="2" data-type="multi" data-min="1" data-max="2" hidden>
         <legend class="legend">Где вам комфортнее работать?</legend>
         <p class="hint">Можно выбрать <b>до 2 вариантов</b>.</p>
         <div class="options">
@@ -215,7 +607,7 @@
       </fieldset>
 
       <!-- 3 -->
-      <fieldset class="card step" data-step="3" data-type="multi" data-min="1" data-max="3">
+      <fieldset class="card step" data-step="3" data-type="multi" data-min="1" data-max="3" hidden>
         <legend class="legend">Ваши сильные стороны?</legend>
         <p class="hint">Можно выбрать <b>до 3 вариантов</b>.</p>
         <div class="options">
@@ -232,7 +624,7 @@
       </fieldset>
 
       <!-- 4 -->
-      <fieldset class="card step" data-step="4" data-type="multi" data-min="1" data-max="3">
+      <fieldset class="card step" data-step="4" data-type="multi" data-min="1" data-max="3" hidden>
         <legend class="legend">Условия и ограничения</legend>
         <p class="hint">Можно выбрать <b>до 3 вариантов</b>.</p>
         <div class="options">
@@ -249,7 +641,7 @@
       </fieldset>
 
       <!-- 5 -->
-      <fieldset class="card step" data-step="5" data-type="single" data-min="1" data-max="1">
+      <fieldset class="card step" data-step="5" data-type="single" data-min="1" data-max="1" hidden>
         <legend class="legend">Сколько готовы учиться для входа в профессию?</legend>
         <p class="hint">Выберите <b>1 вариант</b>.</p>
         <div class="options">
@@ -261,7 +653,7 @@
       </fieldset>
 
       <!-- 6 -->
-      <fieldset class="card step" data-step="6" data-type="multi" data-min="1" data-max="2">
+      <fieldset class="card step" data-step="6" data-type="multi" data-min="1" data-max="2" hidden>
         <legend class="legend">Что важнее всего в работе?</legend>
         <p class="hint">Можно выбрать <b>до 2 вариантов</b>.</p>
         <div class="options">
@@ -278,7 +670,7 @@
       </fieldset>
 
       <!-- 7 (опционально) -->
-      <fieldset class="card step" data-step="7" data-type="text" data-optional="true">
+      <fieldset class="card step" data-step="7" data-type="text" data-optional="true" hidden>
         <legend class="legend">Коротко опишите работу мечты</legend>
         <p class="hint">1–2 предложения</p>
         <textarea id="q7" name="q7" rows="3" placeholder="Например: «Хочу создавать понятные цифровые продукты и работать в гибкой команде»" style="width:100%;resize:vertical;border-radius:12px;border:1px solid var(--line-0);background:linear-gradient(180deg,var(--panel-0),var(--panel-1));color:var(--text);padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)"></textarea>
@@ -312,6 +704,9 @@
       const progressBar = document.getElementById('progressBar');
       const progressText = document.getElementById('progressText');
       const seeResultBtn = document.getElementById('seeResultBtn');
+
+      let lastVisibleIndex = steps.findIndex(fs => !fs.hidden);
+      if (lastVisibleIndex < 0) lastVisibleIndex = 0;
 
       // Изначально скрываем всё, кроме первого
       steps.forEach((fs, i) => { if (i > 0) fs.hidden = true; });
@@ -406,7 +801,6 @@
             } else if (required) {
               revealNext = false;
             } else {
-              // опциональный шаг можно показать, если всё обязательное пройдено
               revealNext = true;
             }
           } else {
@@ -416,16 +810,30 @@
 
         updateProgress(answered);
 
-        // Показать результат, когда все обязательные заполнены
-        const result = document.getElementById('result');
+        let highestVisible = -1;
+        steps.forEach((fs, idx) => {
+          if (!fs.hidden && idx > highestVisible) highestVisible = idx;
+        });
+
+        if (highestVisible > lastVisibleIndex && steps[highestVisible]) {
+          steps[highestVisible].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (highestVisible >= 0) {
+          lastVisibleIndex = highestVisible;
+        }
+
+        const resultSection = document.getElementById('result');
         if (answered >= requiredSteps.length) {
-          // Покажем опциональный шаг (если был скрыт) и результат
           const optional = steps.find(s => s.dataset.optional === 'true');
           if (optional) optional.hidden = false;
-          document.getElementById('result').classList.add('show');
+          const wasHidden = !resultSection.classList.contains('show');
+          resultSection.classList.add('show');
           fillSummary();
+          if (wasHidden) {
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         } else {
-          document.getElementById('result').classList.remove('show');
+          resultSection.classList.remove('show');
         }
       };
 
@@ -440,7 +848,6 @@
         updateVisibility();
       });
 
-      // Кнопки
       document.getElementById('resetBtn').addEventListener('click', () => {
         form.reset();
         steps.forEach(fs => {
@@ -450,7 +857,6 @@
           });
           updateCounter(fs);
         });
-        // скрыть после сброса
         steps.forEach((fs, i) => { fs.hidden = i > 0; });
         document.getElementById('result').classList.remove('show');
         updateVisibility();

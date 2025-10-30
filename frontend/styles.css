@@ -73,11 +73,13 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Jura', system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji", "Segoe UI Emoji";
+  overflow: hidden;
 }
 
 body {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
 }
 
 body::before,
@@ -338,21 +340,21 @@ body::after {
 .chat-input-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: clamp(14px, 2vw, 20px);
-  align-items: end;
+  gap: clamp(10px, 1.4vw, 16px);
+  align-items: stretch;
 }
 
 .chat-input {
   background: var(--input-bg);
   border: 1px solid var(--input-border);
   color: var(--text);
-  padding: clamp(12px, 1.8vw, 18px);
+  padding: clamp(10px, 1.4vw, 14px);
   border-radius: 14px;
   font-size: clamp(1rem, 1.6vw, 1.2rem);
   resize: none;
-  line-height: 1.5;
+  line-height: 1.4;
   width: 100%;
-  min-height: 3.2rem;
+  min-height: calc(1.4em + 2 * clamp(10px, 1.4vw, 14px));
   overflow-y: hidden;
 }
 
@@ -363,7 +365,8 @@ body::after {
 .chat-actions {
   display: grid;
   grid-auto-flow: column;
-  gap: clamp(8px, 1vw, 12px);
+  gap: clamp(4px, 0.8vw, 8px);
+  align-items: stretch;
 }
 
 .chat-action-btn {
@@ -371,11 +374,13 @@ body::after {
   border: 1px solid var(--button-border);
   background: var(--button-bg);
   color: var(--text);
-  padding: clamp(10px, 1.4vw, 16px);
-  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  padding: 0 clamp(14px, 1.6vw, 20px);
+  min-height: calc(1.4em + 2 * clamp(10px, 1.4vw, 14px));
   border-radius: 12px;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
   cursor: pointer;
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
@@ -389,9 +394,9 @@ body::after {
   border: 1px solid var(--button-border);
   background: var(--button-bg);
   color: var(--text);
-  padding: clamp(12px, 1.8vw, 18px) clamp(20px, 2.4vw, 28px);
-  border-radius: 14px;
-  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  padding: clamp(6px, 0.9vw, 10px) clamp(14px, 1.6vw, 20px);
+  border-radius: 12px;
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
@@ -775,4 +780,177 @@ body::after {
     background-position: 0% 50%;
     opacity: 0.42;
   }
+}
+
+/* Settings modal */
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(24px);
+  z-index: 80;
+  animation: fadeIn 200ms ease;
+}
+
+:root[data-theme="light"] .settings-backdrop {
+  background: rgba(230, 240, 255, 0.6);
+}
+
+.settings-dialog {
+  min-width: min(420px, 92vw);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: clamp(18px, 2.4vw, 28px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
+  display: grid;
+  gap: clamp(14px, 2vw, 20px);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .settings-dialog {
+  box-shadow: 0 18px 48px rgba(38, 64, 120, 0.18);
+}
+
+.settings-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+  font-weight: 700;
+}
+
+.settings-list {
+  display: grid;
+  gap: clamp(12px, 1.6vw, 18px);
+}
+
+.settings-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: clamp(10px, 1.4vw, 16px);
+  align-items: center;
+}
+
+.settings-info {
+  display: grid;
+  gap: clamp(6px, 1vw, 10px);
+}
+
+.settings-name {
+  font-weight: 600;
+  font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+}
+
+.settings-slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.settings-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  margin-top: -6px;
+}
+
+.settings-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), rgba(255, 255, 255, 0.2));
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+}
+
+.settings-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), rgba(255, 255, 255, 0.2));
+}
+
+.settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(0.9rem, 1.4vw, 1rem);
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-toggle-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+:root[data-theme="light"] .settings-toggle-track {
+  background: rgba(28, 64, 120, 0.12);
+}
+
+.settings-toggle-thumb {
+  position: absolute;
+  inset: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 200ms ease, background 200ms ease;
+}
+
+.settings-toggle input:checked + .settings-toggle-track {
+  background: rgba(84, 225, 255, 0.35);
+  border-color: var(--accent);
+}
+
+:root[data-theme="light"] .settings-toggle input:checked + .settings-toggle-track {
+  background: rgba(31, 126, 160, 0.25);
+}
+
+.settings-toggle input:checked + .settings-toggle-track .settings-toggle-thumb {
+  transform: translateX(20px);
+  background: var(--accent);
+}
+
+.settings-toggle-text {
+  color: var(--text-muted);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-close {
+  appearance: none;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--text);
+  padding: clamp(8px, 1.2vw, 12px) clamp(18px, 2vw, 28px);
+  border-radius: 12px;
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.settings-close:hover {
+  border-color: var(--accent);
 }

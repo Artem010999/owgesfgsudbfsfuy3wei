@@ -174,7 +174,13 @@ function Overlay({ onFinished }) {
 }
 
 function App() {
-  const [showOverlay, setShowOverlay] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(() => {
+    try {
+      return window.localStorage.getItem('overlay-dismissed') === 'true' ? false : true;
+    } catch (error) {
+      return true;
+    }
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [chat, setChat] = useState([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -227,30 +233,53 @@ function App() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  const handleOverlayFinished = () => {
+    try {
+      window.localStorage.setItem('overlay-dismissed', 'true');
+    } catch (error) {
+      // ignore
+    }
+    setShowOverlay(false);
+  };
+
   useEffect(() => {
     const elements = Array.from(document.querySelectorAll('.tilt-follow'));
     if (!elements.length) {
       return;
     }
 
-    const maxTilt = 4;
+    const maxTilt = 2;
+    const maxShift = 3;
+    const perspective = 1200;
+
+    const applyInitial = () => {
+      elements.forEach((el) => {
+        el.style.transform = `perspective(${perspective}px) translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)`;
+      });
+    };
+
+    applyInitial();
 
     const handleMouseMove = (event) => {
-      const { innerWidth, innerHeight } = window;
-      const percentX = event.clientX / innerWidth - 0.5;
-      const percentY = event.clientY / innerHeight - 0.5;
-
       elements.forEach((el) => {
+        const rect = el.getBoundingClientRect();
         const depth = Number(el.dataset.tiltDepth || 1);
+        const offsetX = event.clientX - (rect.left + rect.width / 2);
+        const offsetY = event.clientY - (rect.top + rect.height / 2);
+        const percentX = offsetX / (rect.width / 2);
+        const percentY = offsetY / (rect.height / 2);
+
         const tiltX = -(percentY * maxTilt * depth);
         const tiltY = percentX * maxTilt * depth;
-        el.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+        const shiftX = percentX * maxShift * depth;
+        const shiftY = percentY * maxShift * depth;
+        el.style.transform = `perspective(${perspective}px) translate3d(${shiftX.toFixed(1)}px, ${shiftY.toFixed(1)}px, 0) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
       });
     };
 
     const resetTilt = () => {
       elements.forEach((el) => {
-        el.style.transform = '';
+        el.style.transform = `perspective(${perspective}px) translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)`;
       });
     };
 
@@ -263,10 +292,36 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        setMenuOpen((v) => !v);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMenuOpen((v) => !v);
+        return;
+      }
+      if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        setCarouselIndex((value) => Math.max(0, value - 1));
+      }
+      if (e.key === 'ArrowRight') {
+        setCarouselIndex((value) => Math.min(6, value + 1));
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => {
+      window.removeEventListener('keydown', handler);
+    };
+  }, []);
+
   return (
     <div id="app">
       {showOverlay && (
-        <Overlay onFinished={() => setShowOverlay(false)} />
+        <Overlay onFinished={handleOverlayFinished} />
       )}
 
       <header className="site-header">
@@ -374,7 +429,16 @@ function App() {
         </section>
 
         <section className="right-grid">
-          <div className="card-carousel tilt-follow" data-tilt-depth="0.8">
+          <div className="card-carousel tilt-follow" data-tilt-depth="0.8" tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                setCarouselIndex((value) => Math.max(0, value - 1));
+              }
+              if (e.key === 'ArrowRight') {
+                setCarouselIndex((value) => Math.min(6, value + 1));
+              }
+            }}
+          >
             <div className="carousel-title">Твоя карточка профессии :D</div>
             <button
               className="arrow left"
@@ -570,7 +634,7 @@ function NoisePlaceholder({ waiting = false }) {
   return (
     <div className="noise-placeholder">
       <canvas className="noise-canvas" ref={canvasRef}></canvas>
-      <div className="rendering-label">{waiting ? 'Ожидаем картинку…' : 'Рендерим вайб…'}</div>
+      <div className="rendering-label">{waiting ? 'Ожидаем ваше воображение…' : 'Рендерим вайб…'}</div>
     </div>
   );
 }
@@ -592,24 +656,43 @@ function SettingsModal() {
 
   if (!open) return null;
   return (
-    <div style={{position:"fixed", inset:0, display:"grid", placeItems:"center", background:"rgba(0,0,0,0.5)", zIndex:80}} onClick={()=>setOpen(false)}>
-      <div style={{minWidth:320, background:"#0b0b0b", border:"1px solid #1a1a1a", borderRadius:12, padding:14}} onClick={e=>e.stopPropagation()}>
-        <h3 style={{marginTop:0}}>Настройки звуков</h3>
-        <div style={{display:"grid", gap:10}}>
+    <div className="settings-backdrop" role="presentation" onClick={()=>setOpen(false)}>
+      <div
+        className="settings-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+        onClick={e=>e.stopPropagation()}
+      >
+        <h3 id="settings-title" className="settings-title">Настройки звуков</h3>
+        <div className="settings-list">
           {sounds.map(s=> (
-            <div key={s.id} style={{display:"grid", gridTemplateColumns:"1fr auto", gap:8, alignItems:"center"}}>
-              <div>
-                <div style={{fontWeight:600}}>{s.name}</div>
-                <input type="range" min="0" max="100" value={s.volume} onChange={e=> setSounds(prev=> prev.map(p=> p.id===s.id? {...p, volume:Number(e.target.value)}:p))} />
+            <div key={s.id} className="settings-item">
+              <div className="settings-info">
+                <div className="settings-name">{s.name}</div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={s.volume}
+                  className="settings-slider"
+                  onChange={e=> setSounds(prev=> prev.map(p=> p.id===s.id? {...p, volume:Number(e.target.value)}:p))}
+                />
               </div>
-              <label style={{display:"inline-flex", alignItems:"center", gap:6}}>
-                <input type="checkbox" checked={s.enabled} onChange={e=> setSounds(prev=> prev.map(p=> p.id===s.id? {...p, enabled:e.target.checked}:p))} /> Вкл
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  checked={s.enabled}
+                  onChange={e=> setSounds(prev=> prev.map(p=> p.id===s.id? {...p, enabled:e.target.checked}:p))}
+                />
+                <span className="settings-toggle-track"><span className="settings-toggle-thumb" /></span>
+                <span className="settings-toggle-text">Вкл</span>
               </label>
             </div>
           ))}
         </div>
-        <div style={{display:"grid", gridAutoFlow:"column", gap:8, marginTop:12, justifyContent:"end"}}>
-          <button className="menu-toggle" onClick={()=> setOpen(false)}>Закрыть</button>
+        <div className="settings-actions">
+          <button className="settings-close" type="button" onClick={()=> setOpen(false)}>Закрыть</button>
         </div>
       </div>
     </div>
