@@ -729,7 +729,6 @@ function App() {
     setImageUrl('');
     setConversationId(null);
     setAiData(null);
-    setLastSummaryCard(null);
     setBackendHistory([{ role: 'assistant', content: GREETING_TEXT }]);
   };
 
@@ -739,19 +738,10 @@ function App() {
     }
     console.log('[cards] building with aiData version', dataVersion, aiData);
     const generated = buildAiCards(aiData) ?? [];
-    if (lastSummaryCard) {
-      return [
-        {
-          key: 'summary-card',
-          render: () => lastSummaryCard,
-        },
-        ...generated,
-      ];
-    }
     return generated.length
       ? generated
       : [{ key: 'placeholder', render: () => <PlaceholderCard /> }];
-  }, [aiData, lastSummaryCard, dataVersion]);
+  }, [aiData, dataVersion]);
 
   const maxCardIndex = cards.length - 1;
 
