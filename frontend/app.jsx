@@ -186,6 +186,7 @@ function App() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
   const [conversationId, setConversationId] = useState(null);
+  const hasUserInput = useMemo(() => chat.some(msg => msg.role === "user" && msg.text?.trim().length > 0), [chat]);
   const [theme, setTheme] = useState(() => {
     try {
       const saved = window.localStorage.getItem('app-theme');
@@ -204,8 +205,58 @@ function App() {
     setConversationId(null);
   };
 
+  const cards = useMemo(() => {
+    const placeholderCard = {
+      key: 'placeholder',
+      render: () => <PlaceholderCard />,
+    };
+
+    const scheduleCard = {
+      key: 'schedule',
+      render: () => (
+        <ScheduleCard
+          profession="фронтенд-разработчика"
+          schedule={{
+            morning: [
+              { time: '09:00 – 09:15', title: 'Планёрка с проектной командой' },
+              { time: '09:15 – 11:00', title: 'Работа над новой фичей в React' },
+              { time: '11:00 – 12:00', title: 'Созвон с дизайнером и уточнение деталей' },
+            ],
+            afternoon: [
+              { time: '12:00 – 13:00', title: 'Обед и небольшая прогулка' },
+              { time: '13:00 – 15:00', title: 'Рефакторинг компонентов и тесты' },
+              { time: '15:00 – 16:30', title: 'Code review коллег и обсуждение решений' },
+            ],
+            evening: [
+              { time: '16:30 – 17:00', title: 'Синк с продактом по задачам следующего спринта' },
+              { time: '17:00 – 18:00', title: 'Фикс багов с анимацией и регресс' },
+              { time: '18:00 – 18:15', title: 'Подведение итогов дня и апдейт в task tracker' },
+            ],
+          }}
+        />
+      ),
+    };
+
+    return hasUserInput ? [scheduleCard] : [placeholderCard];
+  }, [hasUserInput]);
+
+  const maxCardIndex = cards.length - 1;
+
+  useEffect(() => {
+    if (carouselIndex > maxCardIndex) {
+      setCarouselIndex(maxCardIndex);
+    }
+  }, [carouselIndex, maxCardIndex]);
+
+  useEffect(() => {
+    if (!hasUserInput) {
+      setCarouselIndex(0);
+    }
+  }, [hasUserInput]);
+
   const handleRandom = () => {
-    const randomIndex = Math.floor(Math.random() * 7);
+    if (cards.length <= 1) return;
+    const randomIndex = Math.floor(Math.random() * cards.length);
     setCarouselIndex(randomIndex);
     setImageUrl(`https://picsum.photos/seed/${Date.now()}-${Math.random()}/1200/900`);
   };
@@ -431,34 +482,41 @@ function App() {
         <section className="right-grid">
           <div className="card-carousel tilt-follow" data-tilt-depth="0.8" tabIndex={0}
             onKeyDown={(e) => {
+              if (!hasUserInput || cards.length <= 1) return;
               if (e.key === 'ArrowLeft') {
                 setCarouselIndex((value) => Math.max(0, value - 1));
               }
               if (e.key === 'ArrowRight') {
-                setCarouselIndex((value) => Math.min(6, value + 1));
+                setCarouselIndex((value) => Math.min(maxCardIndex, value + 1));
               }
             }}
           >
-            <div className="carousel-title">Твоя карточка профессии :D</div>
-            <button
-              className="arrow left"
-              type="button"
-              disabled={carouselIndex === 0}
-              onClick={() => setCarouselIndex((value) => Math.max(0, value - 1))}
-            >
-              {'<'}
-            </button>
+            <div className="carousel-title">Твоя карточка профессии</div>
+            {hasUserInput && cards.length > 0 && (
+              <>
+                {carouselIndex > 0 && (
+                  <button
+                    className="arrow left"
+                    type="button"
+                    onClick={() => setCarouselIndex((value) => Math.max(0, value - 1))}
+                  >
+                    {'<'}
+                  </button>
+                )}
+                {carouselIndex < maxCardIndex && (
+                  <button
+                    className="arrow right"
+                    type="button"
+                    onClick={() => setCarouselIndex((value) => Math.min(maxCardIndex, value + 1))}
+                  >
+                    {'>'}
+                  </button>
+                )}
+              </>
+            )}
             <div className="carousel-inner">
-              <CarouselContent index={carouselIndex} />
+              <CarouselContent index={carouselIndex} cards={cards} />
             </div>
-            <button
-              className="arrow right"
-              type="button"
-              disabled={carouselIndex === 6}
-              onClick={() => setCarouselIndex((value) => Math.min(6, value + 1))}
-            >
-              {'>'}
-            </button>
           </div>
 
           <ImagePanel url={imageUrl} />
@@ -568,27 +626,62 @@ function ChatInput({ onSend, logRef }) {
 }
 
 // Carousel placeholder content for 7 steps
-function CarouselContent({ index }) {
-  const items = [1,2,3,4,5,6,7].map(n => (
-    <div
-      key={n}
-      style={{
-        width: '100%',
-        maxWidth: 'min(480px, 90%)',
-        background: 'var(--surface)',
-        border: '1px solid var(--panel-border)',
-        borderRadius: 16,
-        padding: 'clamp(16px, 2.6vw, 28px)',
-        display: 'grid',
-        gap: 'clamp(6px, 1.4vw, 12px)',
-        boxShadow: '0 6px 24px rgba(0, 0, 0, 0.18)'
-      }}
-    >
-      <h3 style={{margin: 0, fontSize: 'clamp(1rem, 2vw, 1.3rem)', color: 'var(--text)'}}>Рабочая карточка сотрудника — {n}</h3>
-      <p style={{color:'var(--text-muted)', fontSize: 'clamp(0.95rem, 1.6vw, 1.1rem)', margin: 0}}>Здесь будет компонент №{n}.</p>
+function CarouselContent({ index, cards }) {
+  const items = cards;
+  if (!items.length) {
+    return null;
+  }
+  const clamped = Math.max(0, Math.min(index, items.length - 1));
+  const card = items[clamped];
+  return (
+    <div className="carousel-card">
+      {card?.render()}
     </div>
-  ));
-  return items[index];
+  );
+}
+
+function PlaceholderCard() {
+  return (
+    <div className="placeholder-card">
+      <h3>Ожидаем ваше воображение...</h3>
+      <p>
+        Расскажите немного о себе, и мы подберём идеальные карточки с расписанием,
+        задачами и вдохновением для вашей новой профессии.
+      </p>
+    </div>
+  );
+}
+
+function ScheduleCard({ profession, schedule }) {
+  return (
+    <div className="schedule-card">
+      <header className="schedule-card__header">
+        <h3>Типичный день {profession}</h3>
+        <p>
+          Гибкое расписание на весь рабочий день — чем живёт специалист на практике.
+        </p>
+      </header>
+      <div className="schedule-grid">
+        {[
+          { key: 'morning', label: 'Утро', events: schedule.morning },
+          { key: 'afternoon', label: 'День', events: schedule.afternoon },
+          { key: 'evening', label: 'Вечер', events: schedule.evening },
+        ].map((column) => (
+          <div className="schedule-column" key={column.key}>
+            <div className="schedule-column__title">{column.label}</div>
+            <div className="schedule-events">
+              {column.events.map((event, idx) => (
+                <div className="schedule-event" key={idx}>
+                  <span className="schedule-event__time">{event.time}</span>
+                  <span className="schedule-event__text">{event.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Image panel with animated noise placeholder
