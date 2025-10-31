@@ -1,5 +1,6 @@
 import telebot
 import os
+import requests
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -21,6 +22,35 @@ def get_gpt_responce(messges_hist):
             messages=messges_hist
         )
         return completon.choices[0].message.content
+    except Exception as e:
+        return None
+
+def get_image_promt_from_gpt(profession_info):
+    try:
+        promt_for_img = f"""На основе информации о профессии: {profession_info}
+        
+Создай короткий промпт на английском языке для генерации изображения этой профессии. Промпт должен быть в стиле художественной иллюстрации, показывающей вайб и атмосферу работы. Не более 30 слов. Только промпт, без дополнительного текста."""
+        
+        img_promt_msgs = [
+            {"role": "system", "content": "Ты помощник, создающий промпты для генерации изображений."},
+            {"role": "user", "content": promt_for_img}
+        ]
+        
+        img_promt = get_gpt_responce(img_promt_msgs)
+        return img_promt.strip() if img_promt else None
+    except Exception as e:
+        return None
+
+def generete_image_with_dalle(promt):
+    try:
+        response = openai_consists.images.generate(
+            model="dall-e-3",
+            prompt=promt,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+        return response.data[0].url
     except Exception as e:
         return None
 
@@ -189,6 +219,22 @@ def vibing_handl(mesage):
                             fallback_msg += f"Рост: {rost}"
                         if fallback_msg:
                             botik_instanse.send_message(mesage.chat.id, fallback_msg.strip())
+                
+                prof_info_full = f"{rezultat}. Типичный день: {' '.join(tipichniy_den)}. {polza if polza else ''}"
+                img_promt = get_image_promt_from_gpt(prof_info_full)
+                
+                if img_promt:
+                    botik_instanse.send_message(mesage.chat.id, "Генерирую изображение...")
+                    img_url = generete_image_with_dalle(img_promt)
+                    
+                    if img_url:
+                        img_respons = requests.get(img_url)
+                        if img_respons.status_code == 200:
+                            botik_instanse.send_photo(mesage.chat.id, img_respons.content)
+                        else:
+                            botik_instanse.send_message(mesage.chat.id, "Не удалось загрузить изображение")
+                    else:
+                        botik_instanse.send_message(mesage.chat.id, "Не удалось сгенерировать изображение")
                 
                 user_states[user_id] = "completed"
                 user_historis[user_id] = []
