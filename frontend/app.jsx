@@ -28,6 +28,270 @@ function createGreetingMessage() {
   };
 }
 
+const PRESET_STRUCTURES = {
+  frontend: {
+    profession: 'Фронтенд-разработчик',
+    schedule: {
+      morning: [
+        '09:00 — Стенд-ап с командой',
+        '10:00 — Код-ревью пул-реквестов',
+        '11:00 — Вёрстка нового интерфейсного модуля',
+      ],
+      lunch: [
+        '13:00 — Синк с дизайнером по UI-деталям',
+        '13:30 — Оптимизация бандла и настройка CI',
+        '14:30 — Тестирование в основных браузерах',
+      ],
+      evening: [
+        '16:00 — Интеграция с API и написание unit-тестов',
+        '17:30 — Демонстрация прогресса продукт-менеджеру',
+        '18:30 — Планирование задач на следующий спринт',
+      ],
+    },
+    tech_stack: [
+      { name: 'TypeScript', note: 'Основной язык для фронтенд-разработки' },
+      { name: 'React + Next.js', note: 'Компонентный подход и SSR' },
+      { name: 'Jest + Testing Library', note: 'Покрытие ключевых сценариев тестами' },
+    ],
+    company_benefits: [
+      { title: 'Рост конверсии', detail: 'Новые UI-паттерны увеличивают заявки на 18%' },
+      { title: 'Скорость релизов', detail: 'Оптимизированная сборка сокращает деплой до 8 минут' },
+      { title: 'Качество кода', detail: 'Автотесты предотвращают 70% регрессий' },
+    ],
+    career_growth: [
+      { title: 'Middle фронтенд-разработчик', detail: 'Ведёт фичи и наставляет джунов' },
+      { title: 'Senior / Tech Lead', detail: 'Отвечает за архитектуру и перфоманс фронта' },
+      { title: 'Head of Frontend / Product Engineer', detail: 'Работает со стратегией продукта и бизнесом' },
+    ],
+    colleague_messages: {
+      short: [
+        'Менеджер: Статистика по A/B тесту уже в Confluence, глянешь?',
+        'Дизайнер: Проверь, сохранилась ли анимация на карточке скидок.',
+        'QA: Закинул новый сценарий на регрессию, нужна твоя проверка.',
+      ],
+      medium: [
+        'Коллега: Было бы круто завтра обсудить миграцию на React 19, есть минут 20?',
+        'PM: Клиенты хвалят onboarding — напиши пару инсайтов к демо.',
+      ],
+      long: [
+        'Тимлид: Сегодня вечером выходим на прод с рекомендателем. Пройдись по чеклисту перфоманса и отпиши, успеваем ли включить lazy-loading изображений.'
+      ],
+    },
+    growth_table: {
+      growth_points: [
+        { label: 'Внимание к UX', value: 'Собираешь инсайты и быстро внедряешь улучшения' },
+        { label: 'Production-ready код', value: 'Поддерживаешь высокий coverage и автоматизацию' },
+        { label: 'Синхронизация с backend', value: 'Держишь в порядке контракты API и коммуникацию' },
+      ],
+      vacancies: [
+        { title: 'Фронтенд-разработчик (React)', salary: 'от 150 000 ₽', link: 'https://hh.ru/vacancy/123456' },
+        { title: 'Middle Frontend Engineer', salary: 'до 220 000 ₽', link: 'https://hh.ru/vacancy/654321' },
+        { title: 'Senior Frontend Developer', salary: '250 000–320 000 ₽', link: 'https://hh.ru/vacancy/112233' },
+      ],
+      courses: [
+        { title: 'Профессия Фронтенд-разработчик', provider: 'Яндекс Практикум', link: 'https://practicum.yandex.ru/frontend-developer/' },
+        { title: 'Frontend-разработчик с нуля до middle', provider: 'Нетология', link: 'https://netology.ru/programs/front-end' },
+        { title: 'Modern React with Redux', provider: 'Udemy', link: 'https://www.udemy.com/course/react-redux/' },
+      ],
+    },
+    image_description: 'Рабочее место фронтендера с двумя мониторами, макетом в Figma и открытым редактором кода.',
+    sound_description: 'Щёлчки механической клавиатуры, уведомления Slack и мягкий эмбиент из наушников.',
+  },
+  accountant: {
+    profession: 'Бухгалтер',
+    schedule: {
+      morning: [
+        '08:30 — Проверка входящих первичных документов',
+        '09:30 — Сверка банковских выписок с 1C',
+        '11:00 — Подготовка платежных поручений',
+      ],
+      lunch: [
+        '12:30 — Консультация с юристом по контрактам',
+        '13:00 — Внесение данных в учетные системы',
+        '14:00 — Контроль налоговых вычетов и льгот',
+      ],
+      evening: [
+        '16:00 — Формирование управленческой отчетности',
+        '17:00 — Отправка деклараций через ЭДО',
+        '18:00 — Архивация документов и план задач на завтра',
+      ],
+    },
+    tech_stack: [
+      { name: '1C:Бухгалтерия', note: 'Учет операций и расчет заработной платы' },
+      { name: 'Диадок / Контур.Экстерн', note: 'Электронный документооборот и сдача отчетности' },
+      { name: 'Excel + Power Query', note: 'Аналитика и сверка с управленческими данными' },
+    ],
+    company_benefits: [
+      { title: 'Финансовая прозрачность', detail: 'Своевременные отчеты ускоряют управленческие решения' },
+      { title: 'Снижение рисков', detail: 'Корректные налоги исключают штрафы и пени' },
+      { title: 'Оптимизация бюджета', detail: 'Контроль расходов экономит до 12% операционных затрат' },
+    ],
+    career_growth: [
+      { title: 'Ведущий бухгалтер', detail: 'Курирует участок учета и обучает коллег' },
+      { title: 'Главный бухгалтер', detail: 'Руководит финансовой отчетностью компании' },
+      { title: 'Финансовый директор', detail: 'Стратегия финансов и взаимодействие с аудиторами' },
+    ],
+    colleague_messages: {
+      short: [
+        'Экономист: Подскажи, какие суммы заносить в отчет по командировкам?',
+        'HR: Нужен срочный расчет отпускных для нового сотрудника.',
+        'Менеджер: Проверь, пришёл ли счет от поставщика логистики.',
+      ],
+      medium: [
+        'Руководитель: Сегодня до 17:00 нужно согласовать бюджет по новому проекту, подготовишь цифры?',
+        'Юрист: Есть вопрос по договору аренды — обсудим индексацию на созвоне.',
+      ],
+      long: [
+        'Главбух: Завтра аудиторы запросят выборку по затратам за квартал. Собери документы и проверь, чтобы все подписи и счета-фактуры были в порядке.'
+      ],
+    },
+    growth_table: {
+      growth_points: [
+        { label: 'Точность учета', value: 'Ведёшь операции без расхождений и доработок' },
+        { label: 'Актуальность регламентов', value: 'Оперативно внедряешь изменения законодательства' },
+        { label: 'Автоматизация', value: 'Настраиваешь интеграции и шаблоны для типовых задач' },
+      ],
+      vacancies: [
+        { title: 'Бухгалтер по учету ТМЦ', salary: '80 000–110 000 ₽', link: 'https://hh.ru/vacancy/224466' },
+        { title: 'Ведущий бухгалтер', salary: '120 000–160 000 ₽', link: 'https://hh.ru/vacancy/335577' },
+        { title: 'Главный бухгалтер', salary: 'от 180 000 ₽', link: 'https://hh.ru/vacancy/446688' },
+      ],
+      courses: [
+        { title: 'Бухгалтерия на практике', provider: 'Skillbox', link: 'https://skillbox.ru/course/accounting-practice/' },
+        { title: 'Главный бухгалтер: повышение квалификации', provider: 'Stepik', link: 'https://stepik.org/course/114920' },
+        { title: 'Финансовый учет и налогообложение', provider: 'Нетология', link: 'https://netology.ru/programs/accounting' },
+      ],
+    },
+    image_description: 'Офис бухгалтера с аккуратными стопками документов и открытой 1C на ноутбуке.',
+    sound_description: 'Тиканье настенных часов, щелчки клавиатуры и уведомления службы электронного документооборота.',
+  },
+  hero_miner: {
+    profession: 'Шахтёр-супергерой',
+    schedule: {
+      morning: [
+        '07:00 — Проверка экзоскелета и дыхательных фильтров',
+        '08:00 — Спуск в шахту и брифинг с командой',
+        '09:30 — Усиление крепи и установка сенсоров безопасности',
+      ],
+      lunch: [
+        '12:00 — Подзарядка реактивного ранца и энергетический батончик',
+        '12:30 — Спасение стажеров из сложного участка',
+        '13:30 — Анализ пород и подготовка к контролируемому подрыву',
+      ],
+      evening: [
+        '16:00 — Вывод породы на поверхность с помощью гравимагнита',
+        '17:30 — Контроль технического состояния снаряжения',
+        '19:00 — Брифинг по спасательным операциям и план на ночь',
+      ],
+    },
+    tech_stack: [
+      { name: 'Экзоскелет X-Rig', note: 'Усиливает силу и снижает нагрузку на суставы' },
+      { name: 'Дроны-разведчики', note: 'Сканируют штреки и ищут потенциальные обвалы' },
+      { name: 'Георадар и лазерные резаки', note: 'Точно картируют породу и добывают редкие минералы' },
+    ],
+    company_benefits: [
+      { title: 'Безопасность смены', detail: 'Сенсоры снижают аварийность на 95%' },
+      { title: 'Рекорд добычи', detail: 'Редкие сверхпроводники доставлены на 30% быстрее графика' },
+      { title: 'Командный дух', detail: 'Тренировки поддерживают боевой настрой всей бригады' },
+    ],
+    career_growth: [
+      { title: 'Наставник супергероев', detail: 'Обучаешь новичков работе с экзоскелетами' },
+      { title: 'Координатор спасательных миссий', detail: 'Планируешь операции и взаимодействуешь с диспетчерской' },
+      { title: 'Герой планетарного масштаба', detail: 'Ведёшь проекты по добыче редких элементов' },
+    ],
+    colleague_messages: {
+      short: [
+        'Диспетчер: Сигнал тревоги на третьем уровне, проверь датчики.',
+        'Геолог: Нашёл жилу ирилия, нужен твой лазерный резак.',
+        'Стажёр: Можно с тобой на обход? Хочу увидеть гравимагнит в деле.',
+      ],
+      medium: [
+        'Командир смены: Если успеешь, загляни на тренировку по эвакуации — ребятам нужен показательный пример.',
+        'Инженер: Новый фильтр воздуха требует калибровки, протестируешь в полевых условиях?',
+      ],
+      long: [
+        'Штаб спасателей: На северном участке возможен обвал. Нужен твой план действий: как укрепим свод, какую технику задействуем и кто будет прикрывать стажёров.'
+      ],
+    },
+    growth_table: {
+      growth_points: [
+        { label: 'Героическая выносливость', value: 'Держишь темп и восстанавливаешься быстрее команды' },
+        { label: 'Технологическая смелость', value: 'Первым тестируешь инновационные устройства и делишься фидбеком' },
+        { label: 'Миссия по спасению', value: 'Продумываешь операции так, чтобы каждый возвращался домой' },
+      ],
+      vacancies: [
+        { title: 'Шахтёр-спасатель', salary: 'от 140 000 ₽ + надбавки', link: 'https://hh.ru/vacancy/557799' },
+        { title: 'Оператор горнодобывающих экзоскелетов', salary: '160 000–210 000 ₽', link: 'https://hh.ru/vacancy/668800' },
+        { title: 'Инженер по безопасности шахт', salary: 'до 240 000 ₽', link: 'https://hh.ru/vacancy/779901' },
+      ],
+      courses: [
+        { title: 'Горная безопасность и спасательные работы', provider: 'Skillbox PRO', link: 'https://skillbox.ru/course/mine-safety/' },
+        { title: 'Работа с дронами в добыче', provider: 'GeekBrains', link: 'https://gb.ru/courses/drone-mining' },
+        { title: 'Физподготовка для горноспасателей', provider: 'Stepik', link: 'https://stepik.org/course/899999' },
+      ],
+    },
+    image_description: 'Подземная галерея с неоновым освещением, шахтёр в экзоскелете и летающие дроны.',
+    sound_description: 'Гул вентиляции, сигнал тревоги вдали и тяжёлые шаги экзоскелета по породе.',
+  },
+};
+
+const PRESET_ALIASES = {
+  'фронтенд разработчик': 'frontend',
+  'фронтенд-разработчик': 'frontend',
+  'frontend разработчик': 'frontend',
+  'frontend developer': 'frontend',
+  'разработчик фронтенда': 'frontend',
+  'бухгалтер': 'accountant',
+  'главный бухгалтер': 'accountant',
+  'бухгалтерия': 'accountant',
+  'шахтер супергерой': 'hero_miner',
+  'шахтер-супергерой': 'hero_miner',
+  'шахтёр супергерой': 'hero_miner',
+  'шахтёр-супергерой': 'hero_miner',
+};
+
+function normalizeProfessionName(value = '') {
+  return value
+    .toString()
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[^a-zа-я0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getPresetForProfession(profession) {
+  if (!profession) return null;
+  const key = PRESET_ALIASES[normalizeProfessionName(profession)];
+  if (!key) return null;
+  const template = PRESET_STRUCTURES[key];
+  return template ? JSON.parse(JSON.stringify(template)) : null;
+}
+
+function extractProfessionFromSummary(message = '') {
+  if (!message) return null;
+  const normalized = message.toLowerCase();
+  if (!normalized.includes('спасибо за ответы')) return null;
+  const match = message.match(/профессию\s+([^.!?\n]+)/i);
+  if (!match) return null;
+  const raw = match[1]
+    .replace(/[«»\"\(\)]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return raw || null;
+}
+
+function createJsonDisplay(payload) {
+  const content = typeof payload === 'string'
+    ? payload
+    : JSON.stringify(payload, null, 2);
+  return (
+    <pre className="chat-json">
+      {`${JSON_MARKER}\n${content}`}
+    </pre>
+  );
+}
+
 function extractAssistantParts(reply = '') {
   if (!reply) {
     return { text: '', json: null };
@@ -413,13 +677,13 @@ function Overlay({ onFinished }) {
             <p className="line-1">В поисках <em>рабочего</em> вайба?</p>
             <p className="line-2">Тогда ты по адресу!</p>
           </div>
-        <button
-          id="hold-button"
-          type="button"
+          <button
+              id="hold-button"
+              type="button"
           aria-label="Удерживай 1 секунду, чтобы продолжить"
-          onMouseDown={start}
-          onTouchStart={start}
-        >
+              onMouseDown={start}
+              onTouchStart={start}
+          >
             Погнали!
             <span className="hold-progress" ref={progressRef} aria-hidden="true"/>
           </button>
@@ -442,6 +706,8 @@ function App() {
     { role: 'assistant', content: GREETING_TEXT },
   ]);
   const [aiData, setAiData] = useState(null);
+  const [dataVersion, setDataVersion] = useState(0);
+  const [lastSummaryCard, setLastSummaryCard] = useState(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
   const [conversationId, setConversationId] = useState(null);
@@ -463,23 +729,29 @@ function App() {
     setImageUrl('');
     setConversationId(null);
     setAiData(null);
+    setLastSummaryCard(null);
     setBackendHistory([{ role: 'assistant', content: GREETING_TEXT }]);
   };
 
   const cards = useMemo(() => {
-    if (aiData) {
-      const generated = buildAiCards(aiData);
-      if (generated && generated.length) {
-        return generated;
-      }
+    if (!aiData) {
+      return [{ key: 'placeholder', render: () => <PlaceholderCard /> }];
     }
-    return [
-      {
-        key: 'placeholder',
-        render: () => <PlaceholderCard />,
-      },
-    ];
-  }, [aiData]);
+    console.log('[cards] building with aiData version', dataVersion, aiData);
+    const generated = buildAiCards(aiData) ?? [];
+    if (lastSummaryCard) {
+      return [
+        {
+          key: 'summary-card',
+          render: () => lastSummaryCard,
+        },
+        ...generated,
+      ];
+    }
+    return generated.length
+      ? generated
+      : [{ key: 'placeholder', render: () => <PlaceholderCard /> }];
+  }, [aiData, lastSummaryCard, dataVersion]);
 
   const maxCardIndex = cards.length - 1;
 
@@ -716,37 +988,177 @@ function App() {
               });
               const data = await res.json();
               if (data?.conversation_id) {
-                setConversationId(data.conversation_id);
+              setConversationId(data.conversation_id);
               }
               const rawReply = data?.reply ?? '';
-              const { text: assistantText, json } = extractAssistantParts(rawReply);
+              console.log('[chat] raw reply:', rawReply);
               const structuredFromBackend = data?.structured_data;
               let updatedHistory = [...historyPayload];
+              const { text: assistantText, json } = extractAssistantParts(rawReply);
+              const conversationForCards = data?.conversation_id || conversationId;
+              const professionHint = extractProfessionFromSummary(assistantText);
+              let jsonMessageDisplayed = false;
+
+              const pushJsonMessage = (payload) => {
+                if (!payload || jsonMessageDisplayed) {
+                  return;
+                }
+                jsonMessageDisplayed = true;
+                setChat(prev => [...prev, { role: "bot", text: createJsonDisplay(payload) }]);
+              };
+
+              const loadCardsData = async ({ sourceData = null, cardsFileUrl = null, professionHint: hint = null } = {}) => {
+                let cardsPayload = null;
+
+                const resolveUrl = (url) => {
+                  if (!url) return null;
+                  if (url.startsWith('http://') || url.startsWith('https://')) {
+                    return url;
+                  }
+                  const base = window.location?.origin ?? 'http://127.0.0.1:8000';
+                  return `${base}${url.startsWith('/') ? url : `/${url}`}`;
+                };
+
+                if (cardsFileUrl) {
+                  try {
+                    const response = await fetch(resolveUrl(cardsFileUrl));
+                    if (response.ok) {
+                      cardsPayload = await response.json();
+                    }
+                  } catch (err) {
+                    console.error('Ошибка чтения JSON-файла карточек', err, cardsFileUrl);
+                  }
+                }
+
+                if (conversationForCards) {
+                  try {
+                    const response = await fetch(`http://127.0.0.1:8000/api/conversation/${conversationForCards}/cards`);
+                    if (response.ok) {
+                      const payload = await response.json();
+                      if (!cardsPayload && payload?.file) {
+                        const fileResponse = await fetch(resolveUrl(payload.file));
+                        if (fileResponse.ok) {
+                          cardsPayload = await fileResponse.json();
+                        }
+                      }
+                      if (!cardsPayload) {
+                        cardsPayload = payload?.data ?? null;
+                      }
+                    }
+                  } catch (err) {
+                    console.error('Ошибка получения карточек из БД', err);
+                  }
+                }
+
+                if ((!cardsPayload || !cardsPayload.profession) && sourceData && sourceData.profession) {
+                  cardsPayload = sourceData;
+                }
+
+                const presetSource = hint || sourceData?.profession;
+                if ((!cardsPayload || !cardsPayload.profession) && presetSource) {
+                  const presetPayload = getPresetForProfession(presetSource);
+                  if (presetPayload) {
+                  console.log('[cards] using preset payload for profession:', presetPayload.profession);
+                    cardsPayload = presetPayload;
+                  }
+                }
+
+                if ((!cardsPayload || !cardsPayload.profession) && sourceData) {
+                  cardsPayload = sourceData;
+                }
+
+                if (!cardsPayload || !cardsPayload.profession) {
+                  return { summaryText: null, payload: null };
+                }
+
+                console.log('[cards] data ready for rendering:', cardsPayload);
+                setAiData(cardsPayload);
+                setDataVersion((v) => v + 1);
+                const summary = buildSummaryArtifacts(cardsPayload);
+                if (summary) {
+                  setChat(prev => [...prev, { role: "bot", text: summary.node }]);
+                  setLastSummaryCard(summary.node);
+                  setCarouselIndex(0);
+                  return { summaryText: summary.text, payload: cardsPayload };
+                }
+                return { summaryText: null, payload: cardsPayload };
+              };
 
               if (assistantText) {
                 setChat(prev => [...prev, { role: "bot", text: assistantText }]);
                 updatedHistory.push({ role: 'assistant', content: assistantText });
               }
 
-              if (structuredFromBackend) {
-                setAiData(structuredFromBackend);
-                const summary = buildSummaryArtifacts(structuredFromBackend);
-                if (summary) {
-                  setChat(prev => [...prev, { role: "bot", text: summary.node }]);
-                  updatedHistory.push({ role: 'assistant', content: summary.text });
+              const cardsFile = data?.cards_file;
+              const userPresetCandidate = getPresetForProfession(trimmed);
+              let summaryHistoryText = null;
+
+              const handleCardsResult = (result) => {
+                if (!result) return;
+                if (result.payload && !jsonMessageDisplayed) {
+                  pushJsonMessage(result.payload);
                 }
+                if (result.summaryText) {
+                  summaryHistoryText = result.summaryText;
+                }
+              };
+
+              if (structuredFromBackend && structuredFromBackend.profession) {
+                console.log('[chat] structured_data from backend:', structuredFromBackend);
+                pushJsonMessage(structuredFromBackend);
+                const result = await loadCardsData({
+                  sourceData: structuredFromBackend,
+                  cardsFileUrl: cardsFile,
+                  professionHint: structuredFromBackend.profession,
+                });
+                handleCardsResult(result);
               } else if (json) {
                 try {
                   const parsed = JSON.parse(json);
-                  setAiData(parsed);
-                  const summary = buildSummaryArtifacts(parsed);
-                  if (summary) {
-                    setChat(prev => [...prev, { role: "bot", text: summary.node }]);
-                    updatedHistory.push({ role: 'assistant', content: summary.text });
-                  }
+                  pushJsonMessage(parsed);
+                  const result = await loadCardsData({
+                    sourceData: parsed,
+                    cardsFileUrl: cardsFile,
+                    professionHint: parsed.profession ?? professionHint,
+                  });
+                  handleCardsResult(result);
                 } catch (error) {
                   console.error('Ошибка разбора JSON от ассистента', error, json);
+                  pushJsonMessage(json);
                 }
+              } else if (cardsFile) {
+                const result = await loadCardsData({
+                  cardsFileUrl: cardsFile,
+                  professionHint,
+                });
+                handleCardsResult(result);
+              }
+
+              if (!summaryHistoryText && professionHint) {
+                const presetPayload = getPresetForProfession(professionHint);
+                if (presetPayload) {
+                  pushJsonMessage(presetPayload);
+                  const result = await loadCardsData({
+                    sourceData: presetPayload,
+                    professionHint,
+                  });
+                  handleCardsResult(result);
+                }
+              }
+
+              if (!summaryHistoryText && userPresetCandidate) {
+                if (!aiData || aiData.profession !== userPresetCandidate.profession) {
+                  pushJsonMessage(userPresetCandidate);
+                  const result = await loadCardsData({
+                    sourceData: userPresetCandidate,
+                    professionHint: userPresetCandidate.profession,
+                  });
+                  handleCardsResult(result);
+                }
+              }
+
+              if (summaryHistoryText) {
+                updatedHistory.push({ role: 'assistant', content: summaryHistoryText });
               }
 
               setBackendHistory(updatedHistory);
@@ -1381,3 +1793,4 @@ function SettingsModal() {
     </div>
   );
 }
+

@@ -5,20 +5,28 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import httpx
 
 from pydantic import BaseModel, Field
 from uuid import uuid4
 
 from prof_test import CareerAdvisor
+from storage import (
+    CARDS_DIR,
+    fetch_latest_cards,
+    get_cards_file_path,
+    init_db,
+    save_cards,
+)
 
 logger = logging.getLogger(__name__)
 
-JSON_MARKER = "<<JSON>>"
+CARDS_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Генератор рабочего вайба API", version="0.1.0")
 
@@ -30,7 +38,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/cards", StaticFiles(directory=str(CARDS_DIR)), name="cards")
+
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://localhost:8500")
+JSON_MARKER = "<<JSON>>"
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    init_db()
 
 
 class ChatMessage(BaseModel):
@@ -39,9 +55,6 @@ class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, description="Сообщение пользователя")
     conversation_id: Optional[str] = Field(
         default=None, description="Идентификатор сессии (если есть)"
-    )
-    history: Optional[List[Dict[str, str]]] = Field(
-        default=None, description="Полный контекст диалога, который есть у клиента"
     )
 
 
@@ -52,10 +65,16 @@ class ChatResponse(BaseModel):
     conversation_id: str
     history: List[Dict[str, str]]
     structured_data: Optional[Dict[str, Any]] = None
+    cards_file: Optional[str] = None
 
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class CardsResponse(BaseModel):
+    data: Optional[Dict[str, Any]] = None
+    file: Optional[str] = None
 
 
 class ProfTestAnswers(BaseModel):
@@ -88,7 +107,6 @@ class PictureResponse(BaseModel):
 
 # In-memory "хранилище" под текущую сессию: conversation_id -> list of messages
 _CHAT_HISTORY: Dict[str, List[Dict[str, str]]] = {}
-_CHAT_STATE: Dict[str, Dict[str, str]] = {}
 _ADVISOR = CareerAdvisor()
 
 
@@ -103,17 +121,6 @@ async def chat_endpoint(payload: ChatMessage) -> ChatResponse:
 
     conversation_id = payload.conversation_id or str(uuid4())
     history = _CHAT_HISTORY.setdefault(conversation_id, [])
-    state = _CHAT_STATE.setdefault(conversation_id, {"phase": "need_clarifications"})
-
-    if not history and payload.history:
-        safe_history: List[Dict[str, str]] = []
-        for item in payload.history:
-            role = item.get("role")
-            content = str(item.get("content", "")).strip()
-            if role in {"user", "assistant"} and content:
-                safe_history.append({"role": role, "content": content})
-        if safe_history:
-            history.extend(safe_history)
 
     message = payload.message.strip()
     if not message:
@@ -121,46 +128,47 @@ async def chat_endpoint(payload: ChatMessage) -> ChatResponse:
 
     history.append({"role": "user", "content": message})
 
-    current_phase = state.get("phase", "need_clarifications")
-    if current_phase == "awaiting_answers":
-        state["phase"] = "ready_for_summary"
-    elif current_phase == "summary_sent":
-        state["phase"] = "roleplay"
-    current_phase = state.get("phase", "need_clarifications")
-
     try:
-        ai_reply = await _call_text_ai(history, state)
+        ai_reply = await _call_text_ai(history)
     except Exception as exc:
         # Фолбэк на заглушку, если сервис недоступен, но историю не рушим
         ai_reply = _fake_ai_reply(message)
         logger.error("Text AI call failed: %s", exc)
-        state["phase"] = current_phase  # не продвигаем фазу при ошибке
-    else:
-        if current_phase == "need_clarifications":
-            state["phase"] = "awaiting_answers"
-        elif current_phase == "ready_for_summary":
-            if JSON_MARKER in ai_reply:
-                state["phase"] = "summary_sent"
-            else:
-                # если модель не дала JSON, остаёмся в этой фазе
-                state["phase"] = "ready_for_summary"
-        elif current_phase == "roleplay" and JSON_MARKER in ai_reply:
-            # JSON в ролевой фазе не допускается — отбрасываем его
-            ai_reply = ai_reply.split(JSON_MARKER)[0].strip()
 
-    reply_text, structured = _extract_structured(ai_reply)
+    reply_text, structured_payload = _extract_structured(ai_reply)
 
     history.append({"role": "assistant", "content": reply_text})
 
-    if structured is not None:
-        state["data"] = structured
+    cards_file_url: Optional[str] = None
+
+    if structured_payload:
+        try:
+            file_path = save_cards(conversation_id, structured_payload)
+            cards_file_url = f"/cards/{file_path.name}"
+        except Exception as exc:  # pragma: no cover - логирование ошибок БД
+            logger.error("Failed to store structured data: %s", exc)
+    else:
+        file_path = get_cards_file_path(conversation_id)
+        if file_path.exists():
+            cards_file_url = f"/cards/{file_path.name}"
 
     return ChatResponse(
         reply=reply_text,
         conversation_id=conversation_id,
         history=history,
-        structured_data=structured,
+        structured_data=structured_payload,
+        cards_file=cards_file_url,
     )
+
+
+@app.get("/api/conversation/{conversation_id}/cards", response_model=CardsResponse)
+def conversation_cards(conversation_id: str) -> CardsResponse:
+    payload = fetch_latest_cards(conversation_id)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="Карточки не найдены")
+    file_path = get_cards_file_path(conversation_id)
+    file_url = f"/cards/{file_path.name}" if file_path.exists() else None
+    return CardsResponse(data=payload, file=file_url)
 
 
 @app.post("/api/profession", response_model=ProfRecommendation)
@@ -216,42 +224,12 @@ def _fake_ai_reply(user_text: str) -> str:
     return f"Я услышал: '{user_text}'. Настраиваю рабочий вайб!"
 
 
-def _build_control_message(phase: str) -> str:
-    if phase == "need_clarifications":
-        return (
-            "Текущий этап: уточняющие вопросы. Задай ровно три коротких вопроса в одном кратком предложении,"
-            " избегай списков и длинных описаний. Не выводи JSON и не рассказывай про профессию."
-        )
-    if phase == "ready_for_summary":
-        return (
-            "Текущий этап: финальное резюме. Ответь фразой 'Спасибо за ответы! Твое рабочее пространство готово)"
-            " Сейчас ты погрузишься в профессию <профессия>.' и сразу после неё без дополнительных слов"
-            f" выведи маркер {JSON_MARKER} и чистый JSON. Не используй слова 'JSON', не добавляй пояснений,"
-            " не продолжай диалог в этом сообщении."
-        )
-    if phase in {"awaiting_answers", "summary_sent", "roleplay"}:
-        return (
-            "Текущий этап: ролевое общение. Отвечай в 1-2 коротких предложениях от лица коллег, менеджеров"
-            " или заказчиков. Всегда начинай с указания роли, предлагай задачи или неформальное общение."
-            " JSON не формируй."
-        )
-    return ""
-
-
-async def _call_text_ai(history: List[Dict[str, str]], state: Dict[str, str]) -> str:
+async def _call_text_ai(history: List[Dict[str, str]]) -> str:
     if not AI_SERVICE_URL:
         raise RuntimeError("AI service URL is not configured")
 
-    phase = state.get("phase", "need_clarifications")
-    control_message = _build_control_message(phase)
-
-    payload_messages: List[Dict[str, str]] = []
-    if control_message:
-        payload_messages.append({"role": "system", "content": control_message})
-    payload_messages.extend(history)
-
     payload = {
-        "messages": payload_messages,
+        "messages": history,
         "max_new_tokens": 600,
         "temperature": 0.7,
         "top_p": 0.9,
@@ -286,43 +264,63 @@ async def _call_text_ai(history: List[Dict[str, str]], state: Dict[str, str]) ->
 
 
 def _extract_structured(reply: str) -> tuple[str, Optional[Dict[str, Any]]]:
-    sanitized = reply.replace('<JSON>', JSON_MARKER).replace('JSON:', JSON_MARKER)
+    sanitized = (
+        reply.replace("<JSON>", JSON_MARKER)
+        .replace("JSON:", JSON_MARKER)
+        .replace("<<JSON", JSON_MARKER)
+        .replace("JSON>>", JSON_MARKER)
+        .replace("<<<", JSON_MARKER)
+        .replace(">>>", "")
+    )
 
     if JSON_MARKER in sanitized:
         text_part, possible_json = sanitized.split(JSON_MARKER, 1)
-        text_part = text_part.strip().rstrip(':').strip()
+        text_part = _clean_text(text_part)
         candidate = possible_json.strip()
         if candidate:
-            parsed = _parse_json_substring(candidate)
+            parsed, consumed = _parse_json_substring(candidate)
             if parsed is not None:
-                return text_part, parsed
+                tail = _clean_text(candidate[consumed:])
+                combined_text = (text_part + (" " + tail if tail else "")).strip()
+                return combined_text, parsed
             logger.error("Failed to parse structured JSON after marker")
         return text_part, None
 
-    first_brace = sanitized.find('{')
+    first_brace = sanitized.find("{")
     if first_brace == -1:
-        return sanitized.strip(), None
+        return _clean_text(sanitized), None
 
-    base_text = sanitized[:first_brace].strip().rstrip(':').strip()
+    base_text = _clean_text(sanitized[:first_brace])
     json_candidate = sanitized[first_brace:]
-    parsed = _parse_json_substring(json_candidate)
+    parsed, consumed = _parse_json_substring(json_candidate)
     if parsed is not None:
-        return base_text, parsed
+        tail = _clean_text(json_candidate[consumed:])
+        combined_text = (base_text + (" " + tail if tail else "")).strip()
+        return combined_text, parsed
     logger.error("Failed to parse structured JSON fallback")
     return base_text, None
 
 
-def _parse_json_substring(payload: str) -> Optional[Dict[str, Any]]:
-    end_indices = [idx for idx, char in enumerate(payload) if char == '}']
+def _parse_json_substring(payload: str) -> tuple[Optional[Dict[str, Any]], int]:
+    end_indices = [idx for idx, char in enumerate(payload) if char == "}"]
     for end in reversed(end_indices):
-        candidate = payload[: end + 1]
+        candidate = payload[: end + 1].strip()
         try:
             data = json.loads(candidate)
             if isinstance(data, dict):
-                return data
+                return data, end + 1
         except json.JSONDecodeError:
             continue
-    return None
+    return None, 0
+
+
+def _clean_text(text: str) -> str:
+    return (
+        text.replace("<", " ")
+        .replace(">", " ")
+        .replace(JSON_MARKER, " ")
+        .strip()
+    )
 
 
 if __name__ == "__main__":

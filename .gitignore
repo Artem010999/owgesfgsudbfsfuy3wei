@@ -17,5 +17,6 @@ __pycache__/
 # Project-specific large data
 ai/all_vacancies.json
 ai/raw_data/
+backend/conversation_cards.db
 
 
