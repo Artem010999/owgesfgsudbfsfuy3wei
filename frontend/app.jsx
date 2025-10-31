@@ -237,7 +237,60 @@ function App() {
       ),
     };
 
-    return hasUserInput ? [scheduleCard] : [placeholderCard];
+    const growthCard = {
+      key: 'growth',
+      render: () => (
+        <GrowthMatrixCard
+          stack={[
+            { title: 'React', description: 'Основной фреймворк для UI с хуками, контекстом и современными паттернами.' },
+            { title: 'TypeScript', description: 'Статическая типизация, которая держит кодовую базу стабильной.' },
+            { title: 'GraphQL', description: 'Оптимизируешь запросы и ускоряешь фронтенд ↔ бэкенд взаимодействие.' },
+          ]}
+          impact={[
+            { title: 'Быстрые релизы', description: 'Ускоряешь вывод фич благодаря хорошо спроектированным компонентам.' },
+            { title: 'Красивый UX', description: 'Прокачиваешь интерфейс и растишь конверсии после A/B-тестов.' },
+            { title: 'Надёжность', description: 'Сокращаешь количество аварий за счёт тестов и типизации.' },
+          ]}
+          growth={[
+            { title: 'Junior → Middle', description: 'Берёшь задачи самостоятельно, покрываешь код тестами и уверенно владеешь стеком.' },
+            { title: 'Middle → Senior', description: 'Проектируешь фичи, менторишь, держишь в порядке кодовую базу.' },
+            { title: 'Senior → Lead', description: 'Определяешь архитектуру и приоритеты, координируешь команду разработки.' },
+          ]}
+        />
+      ),
+    };
+
+    const messagesCard = {
+      key: 'messages',
+      render: () => <InboxPreviewCard />,
+    };
+
+    const opportunityCard = {
+      key: 'opportunity',
+      render: () => (
+        <OpportunityCard
+          stats={[
+            { label: 'Насколько перспективна?', value: 'Очень — сфера растёт двузначными темпами ежегодно.' },
+            { label: 'Много ли вакансий?', value: '≈ 4 500 позиций на hh.ru сейчас' },
+            { label: 'Конкурентность', value: 'Средняя: важнее навыковый стек и портфолио.' },
+          ]}
+          vacancies={[
+            { title: 'Middle Frontend Engineer · React', salary: 'от 220 000 ₽', href: 'https://hh.ru/vacancy/123456' },
+            { title: 'Senior UI Developer · Design Systems', salary: 'от 260 000 ₽', href: 'https://hh.ru/vacancy/234567' },
+            { title: 'Frontend-разработчик · SaaS', salary: 'до 240 000 ₽', href: 'https://hh.ru/vacancy/345678' },
+          ]}
+          courses={[
+            { title: 'Архитектура интерфейсов', provider: 'Яндекс Практикум', href: 'https://practicum.yandex.ru/frontend-architect/' },
+            { title: 'Advanced React Patterns', provider: 'EpicReact.dev', href: 'https://epicreact.dev/' },
+            { title: 'Frontend Lead. Углублённый курс', provider: 'Otus', href: 'https://otus.ru/lessons/frontend-lead/' },
+          ]}
+        />
+      ),
+    };
+
+    return hasUserInput
+      ? [scheduleCard, growthCard, messagesCard, opportunityCard]
+      : [placeholderCard];
   }, [hasUserInput]);
 
   const maxCardIndex = cards.length - 1;
@@ -249,10 +302,8 @@ function App() {
   }, [carouselIndex, maxCardIndex]);
 
   useEffect(() => {
-    if (!hasUserInput) {
-      setCarouselIndex(0);
-    }
-  }, [hasUserInput]);
+    setCarouselIndex(0);
+  }, [cards.length]);
 
   const handleRandom = () => {
     if (cards.length <= 1) return;
@@ -355,19 +406,21 @@ function App() {
         setMenuOpen((v) => !v);
         return;
       }
+      if (!hasUserInput || cards.length <= 1) return;
       if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      const maxIndex = cards.length - 1;
       if (e.key === 'ArrowLeft') {
         setCarouselIndex((value) => Math.max(0, value - 1));
       }
       if (e.key === 'ArrowRight') {
-        setCarouselIndex((value) => Math.min(6, value + 1));
+        setCarouselIndex((value) => Math.min(maxIndex, value + 1));
       }
     };
     window.addEventListener('keydown', handler);
     return () => {
       window.removeEventListener('keydown', handler);
     };
-  }, []);
+  }, [hasUserInput, cards.length]);
 
   return (
     <div id="app">
@@ -456,7 +509,7 @@ function App() {
 
       <main className="main-grid" id="main-content" tabIndex={-1} aria-live="polite">
         <section className="chat-panel glass tilt-follow" data-tilt-depth="1">
-          <h3 className="chat-title">Чат ИИ</h3>
+          <h3 className="chat-title">Вайбовый чат</h3>
           <ChatLog items={chat} logRef={logRef} />
           <ChatInput onSend={async (text) => {
             if (!text.trim()) return;
@@ -483,11 +536,12 @@ function App() {
           <div className="card-carousel tilt-follow" data-tilt-depth="0.8" tabIndex={0}
             onKeyDown={(e) => {
               if (!hasUserInput || cards.length <= 1) return;
+              const maxIndex = cards.length - 1;
               if (e.key === 'ArrowLeft') {
                 setCarouselIndex((value) => Math.max(0, value - 1));
               }
               if (e.key === 'ArrowRight') {
-                setCarouselIndex((value) => Math.min(maxCardIndex, value + 1));
+                setCarouselIndex((value) => Math.min(maxIndex, value + 1));
               }
             }}
           >
@@ -679,6 +733,195 @@ function ScheduleCard({ profession, schedule }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function GrowthMatrixCard({ stack, impact, growth }) {
+  const columns = [
+    { key: 'stack', label: 'Стек технологий', items: stack },
+    { key: 'impact', label: 'Польза для компании', items: impact },
+    { key: 'growth', label: 'Пути роста', items: growth },
+  ];
+
+  const rows = stack.slice(0, 3).map((_, idx) => idx);
+
+  return (
+    <div className="matrix-card">
+      <header className="matrix-card__header">
+        <h3>Карта развития компетенций</h3>
+        <p>Какие навыки растишь, какой эффект приносишь и куда движешься дальше.</p>
+      </header>
+      <div className="matrix-table">
+        {columns.map((column) => (
+          <div className="matrix-table__cell matrix-table__cell--head" key={`head-${column.key}`}>
+            {column.label}
+          </div>
+        ))}
+        {rows.map((rowIdx) => (
+          columns.map((column) => {
+            const item = column.items[rowIdx];
+            return (
+              <div className="matrix-table__cell" key={`${column.key}-${rowIdx}`}>
+                <span className="matrix-item__title">{item.title}</span>
+                <span className="matrix-item__description">{item.description}</span>
+              </div>
+            );
+          })
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InboxPreviewCard() {
+  const messages = useMemo(() => {
+    const source = [
+      {
+        type: 'long',
+        author: 'Team Lead',
+        preview: 'Круто закрыл фичу! Закинул тебе ревью на следующую задачу — глянь, там есть интересный эксперимент с серверными компонентами. '
+          + 'Если будут идеи по оптимизации, пиши прямо в тред, обсудим вместе.',
+      },
+      {
+        type: 'short',
+        author: 'Product Manager',
+        preview: 'Готов ли прототип новой воронки? Хочу показать на демо клиенту завтра утром.',
+      },
+      {
+        type: 'short',
+        author: 'Design Chapter',
+        preview: 'Залил фреймы в Figma, там новые анимации и ховеры под твой компонент.',
+      },
+      {
+        type: 'short',
+        author: 'QA Team',
+        preview: 'Сборка зелёная. Нашёл один edge-case с валидацией — смотри тикет #347.',
+      },
+      {
+        type: 'medium',
+        author: 'HR Partner',
+        preview: 'Напоминаю про митап по карьере завтра в 16:00. Будет блок про менторство и дележ опыта.',
+      },
+      {
+        type: 'medium',
+        author: 'Analytics',
+        preview: 'Новая метрика по вовлечённости выросла на 12%. Можно обсудить, как закрепить результат.',
+      },
+    ];
+
+    const shuffled = [...source]
+      .map(item => ({ item, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ item }) => item);
+
+    const selection = shuffled.reduce(
+      (acc, message) => {
+        if (message.type === 'long' && !acc.long) acc.long = message;
+        else if (message.type === 'short' && acc.shorts.length < 3) acc.shorts.push(message);
+        else if (message.type === 'medium' && acc.mediums.length < 2) acc.mediums.push(message);
+        return acc;
+      },
+      { long: null, shorts: [], mediums: [] }
+    );
+
+    const sectionOrder = ['long', 'shorts', 'mediums']
+      .map(type => ({ type, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ type }) => type);
+
+    return { ...selection, order: sectionOrder };
+  }, []);
+
+  if (!messages.long) {
+    return null;
+  }
+
+  return (
+    <div className="inbox-card">
+      <header className="inbox-card__header">
+        <h3>Тебе пришло 6 новых сообщений!</h3>
+        <p>Команда делится апдейтами, держим руку на пульсе.</p>
+      </header>
+      <div className="inbox-list">
+        {messages.order.map((section) => {
+          if (section === 'long') {
+            return <MessageBubble variant="long" message={messages.long} key="long" />;
+          }
+          if (section === 'shorts') {
+            return (
+              <div className="inbox-row inbox-row--shorts" key="shorts">
+                {messages.shorts.map((msg, idx) => (
+                  <MessageBubble variant="short" message={msg} key={`short-${idx}`} />
+                ))}
+              </div>
+            );
+          }
+          return (
+            <div className="inbox-row inbox-row--mediums" key="mediums">
+              {messages.mediums.map((msg, idx) => (
+                <MessageBubble variant="medium" message={msg} key={`medium-${idx}`} />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({ variant, message }) {
+  const className = `message-bubble message-bubble--${variant}`;
+  return (
+    <div className={className}>
+      <span className="message-bubble__author">{message.author}</span>
+      <span className="message-bubble__text">{message.preview}</span>
+    </div>
+  );
+}
+
+function OpportunityCard({ stats, vacancies, courses }) {
+  return (
+    <div className="opportunity-card">
+      <header className="opportunity-card__header">
+        <h3>Перспективы и точки роста</h3>
+        <p>Куда двигаться дальше и где применять навыки прямо сейчас.</p>
+      </header>
+      <div className="opportunity-grid">
+        <div className="opportunity-column opportunity-column--stats">
+          <div className="opportunity-column__title">Точки роста</div>
+          <div className="opportunity-stats">
+            {stats.map((item, idx) => (
+              <div className="opportunity-stat" key={idx}>
+                <span className="opportunity-stat__label">{item.label}</span>
+                <span className="opportunity-stat__value">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="opportunity-column">
+          <div className="opportunity-column__title">Вакансии</div>
+          <div className="opportunity-cards">
+            {vacancies.map((vac, idx) => (
+              <a className="opportunity-card__link" href={vac.href} target="_blank" rel="noreferrer" key={`vac-${idx}`}>
+                <span className="opportunity-card__title">{vac.title}</span>
+                <span className="opportunity-card__meta">{vac.salary}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="opportunity-column">
+          <div className="opportunity-column__title">Курсы</div>
+          <div className="opportunity-cards">
+            {courses.map((course, idx) => (
+              <a className="opportunity-card__link" href={course.href} target="_blank" rel="noreferrer" key={`course-${idx}`}>
+                <span className="opportunity-card__title">{course.title}</span>
+                <span className="opportunity-card__meta">{course.provider}</span>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
