@@ -1,5 +1,10 @@
 const { useEffect, useMemo, useRef, useState } = React;
 
+// Добавляем типы для Speech Recognition API
+if (typeof window !== 'undefined') {
+  window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+}
+
 const HOLD_MS = 1000;
 const GRID_COLS = 40;
 const GRID_ROWS = 20; // 40 * 20 = 800 tiles
@@ -607,7 +612,10 @@ function ChatLog({ items, logRef }) {
 
 function ChatInput({ onSend, logRef }) {
   const [value, setValue] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeechSupported, setIsSpeechSupported] = useState(true);
   const textareaRef = useRef(null);
+  const recognitionRef = useRef(null);
   const maxRows = 4;
 
   const ensureLogScroll = () => {
@@ -635,6 +643,47 @@ function ChatInput({ onSend, logRef }) {
     autoResize();
   }, []);
 
+  // Speech Recognition API
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setIsSpeechSupported(false);
+      return;
+    }
+
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = false;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'ru-RU';
+
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0])
+        .map((result) => result.transcript)
+        .join('');
+      setValue(transcript);
+    };
+
+    recognitionRef.current.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert('Пожалуйста, разрешите доступ к микрофону в настройках браузера');
+      }
+    };
+
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
   const handleSend = () => {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -646,6 +695,28 @@ function ChatInput({ onSend, logRef }) {
       textarea.style.overflowY = 'hidden';
     }
     ensureLogScroll();
+  };
+
+  const toggleListening = () => {
+    if (!isSpeechSupported) {
+      alert('Распознавание речи не поддерживается в вашем браузере. Пожалуйста, используйте Chrome, Edge или Safari.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        setValue('');
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        alert('Ошибка доступа к микрофону. Проверьте разрешения.');
+        setIsListening(false);
+      }
+    }
   };
 
   return (
@@ -671,7 +742,12 @@ function ChatInput({ onSend, logRef }) {
         <button type="button" className="chat-action-btn" onClick={handleSend} aria-label="Отправить сообщением">
           ⌯⌲
         </button>
-        <button type="button" className="chat-action-btn" aria-label="Записать голосовое">
+        <button 
+          type="button" 
+          className={`chat-action-btn ${isListening ? 'listening' : ''}`}
+          onClick={toggleListening}
+          aria-label={isListening ? 'Остановить запись' : 'Записать голосовое'}
+        >
           🎙️
         </button>
       </div>
