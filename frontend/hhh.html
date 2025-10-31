@@ -508,11 +508,10 @@
       background: var(--tag-bg);
       color: var(--text);
     }
-    .footer-note {
-      color: var(--footer-note-color);
-      font-size: 12px;
-      margin-top: 18px;
-    }
+    .recommendation-card{margin-top:clamp(16px,2vw,24px);padding:clamp(16px,2.4vw,24px);border-radius:16px;border:1px solid var(--panel-border);background:var(--panel-bg);box-shadow:0 8px 24px rgba(0,0,0,0.16);display:grid;gap:clamp(10px,1.6vw,14px);}
+    .recommendation-card h3{margin:0;font-size:clamp(1rem,1.8vw,1.3rem);color:var(--text)}
+    .recommendation-text{margin:0;white-space:pre-wrap;line-height:1.5;color:var(--text)}
+    .footer-note{color:var(--footer-note-color);font-size:12px;margin-top:18px}
     input[type="range"] {
       accent-color: var(--accent);
     }
@@ -687,6 +686,10 @@
         <h3>Ваши ответы</h3>
         <div id="answersList" class="tags"></div>
       </div>
+      <div id="recommendationCard" class="recommendation-card" hidden>
+        <h3>Рекомендуемая профессия</h3>
+        <p id="recommendationText" class="recommendation-text"></p>
+      </div>
       <div class="actions">
         <button class="btn" type="button" id="resetBtn">Пройти ещё раз</button>
       </div>
@@ -704,6 +707,8 @@
       const progressBar = document.getElementById('progressBar');
       const progressText = document.getElementById('progressText');
       const seeResultBtn = document.getElementById('seeResultBtn');
+      const recommendationCard = document.getElementById('recommendationCard');
+      const recommendationText = document.getElementById('recommendationText');
 
       let lastVisibleIndex = steps.findIndex(fs => !fs.hidden);
       if (lastVisibleIndex < 0) lastVisibleIndex = 0;
@@ -859,14 +864,74 @@
         });
         steps.forEach((fs, i) => { fs.hidden = i > 0; });
         document.getElementById('result').classList.remove('show');
+        if (recommendationCard) {
+          recommendationCard.hidden = true;
+          recommendationText.textContent = '';
+        }
         updateVisibility();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
-      seeResultBtn?.addEventListener('click', () => {
+      const collectAnswers = () => {
+        const formData = new FormData(form);
+        const raw = {
+          q1: formData.get('q1'),
+          q2: formData.getAll('q2[]'),
+          q3: formData.getAll('q3[]'),
+          q4: formData.getAll('q4[]'),
+          q5: formData.get('q5'),
+          q6: formData.getAll('q6[]'),
+          q7: (form.querySelector('#q7')?.value || '').trim(),
+        };
+
+        return Object.entries(raw).reduce((acc, [key, value]) => {
+          if (Array.isArray(value)) {
+            const filtered = value.filter(Boolean);
+            if (filtered.length) acc[key] = filtered;
+          } else if (typeof value === 'string' && value.trim() !== '') {
+            acc[key] = value.trim();
+          }
+          return acc;
+        }, {});
+      };
+
+      const requestRecommendation = async () => {
+        if (!recommendationCard) return;
+        recommendationCard.hidden = false;
+        recommendationText.textContent = 'Подбираем профессию…';
+
+        const payload = collectAnswers();
+        if (Object.keys(payload).length === 0) {
+          recommendationText.textContent = 'Ответов пока недостаточно.';
+          return;
+        }
+
+        try {
+          const response = await fetch('http://127.0.0.1:8000/api/profession', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Статус ${response.status}`);
+          }
+
+          const data = await response.json();
+          recommendationText.textContent = data.recommendation || 'Ответ от сервиса пустой.';
+        } catch (error) {
+          recommendationText.textContent = 'Не удалось получить рекомендацию. Попробуйте позже.';
+          console.error('Ошибка при запросе рекомендации', error);
+        }
+      };
+
+      seeResultBtn?.addEventListener('click', async () => {
         fillSummary();
         document.getElementById('result').classList.add('show');
         document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        seeResultBtn.disabled = true;
+        await requestRecommendation();
+        seeResultBtn.disabled = false;
       });
     });
   </script>
