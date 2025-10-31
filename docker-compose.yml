@@ -47,6 +47,8 @@ services:
       dockerfile: Dockerfile
     container_name: telegram-bot
     restart: unless-stopped
+    env_file:
+      - ./.env
     networks:
       - app-network
 

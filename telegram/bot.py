@@ -1,8 +1,13 @@
 import telebot
+import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
-tokenn = ""
-openai_consists = OpenAI(api_key="")
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
+tokenn = os.getenv("TELEGRAM_TOKEN", "")
+openai_api_keyy = os.getenv("OPENAI_API_KEY", "")
+openai_consists = OpenAI(api_key=openai_api_keyy)
 
 botik_instanse = telebot.TeleBot(tokenn)
 
