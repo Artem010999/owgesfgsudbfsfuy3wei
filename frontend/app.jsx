@@ -906,7 +906,10 @@ function OpportunityCard({ stats, vacancies, courses }) {
             {vacancies.map((vac, idx) => (
               <a className="opportunity-card__link" href={vac.href} target="_blank" rel="noreferrer" key={`vac-${idx}`}>
                 <span className="opportunity-card__title">{vac.title}</span>
-                <span className="opportunity-card__meta">{vac.salary}</span>
+                <div className="opportunity-card__footer">
+                  <span className="opportunity-card__meta">{vac.salary}</span>
+                  <span className="opportunity-card__icon" aria-hidden="true">⬊</span>
+                </div>
               </a>
             ))}
           </div>
@@ -917,7 +920,10 @@ function OpportunityCard({ stats, vacancies, courses }) {
             {courses.map((course, idx) => (
               <a className="opportunity-card__link" href={course.href} target="_blank" rel="noreferrer" key={`course-${idx}`}>
                 <span className="opportunity-card__title">{course.title}</span>
-                <span className="opportunity-card__meta">{course.provider}</span>
+                <div className="opportunity-card__footer">
+                  <span className="opportunity-card__meta">{course.provider}</span>
+                  <span className="opportunity-card__icon" aria-hidden="true">⬊</span>
+                </div>
               </a>
             ))}
           </div>
