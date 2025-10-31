@@ -1,6 +1,6 @@
 const { useEffect, useMemo, useRef, useState } = React;
 
-//Типы для Speech Recognition API
+// Типы для Speech Recognition API
 if (typeof window !== 'undefined') {
   window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 }
