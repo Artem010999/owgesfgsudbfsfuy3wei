@@ -482,7 +482,7 @@ function App() {
             <a
               className="menu-item"
               style={{ "--i": 1 }}
-              href="https://t.me/your_bot"
+              href="https://t.me/VibeChater_bot"
               target="_blank"
               rel="noreferrer"
               onClick={() => setMenuOpen(false)}

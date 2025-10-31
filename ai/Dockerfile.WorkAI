@@ -7,4 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 8500
 
-CMD ["python", "-m", "http.server", "8500"]
+ENV PYTHONPATH="/app"
+CMD ["uvicorn", "picture_ai.app:app", "--host", "0.0.0.0", "--port", "8500"]

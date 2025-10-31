@@ -38,6 +38,8 @@ services:
     restart: unless-stopped
     ports:
       - "8500:8500"
+    environment:
+      - PICTURE_AI_ENDPOINT=https://a4ddf377e094.ngrok-free.app/
     networks:
       - app-network
 

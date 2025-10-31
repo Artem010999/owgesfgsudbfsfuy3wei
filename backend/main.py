@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 
 from pydantic import BaseModel, Field
 from uuid import uuid4
@@ -21,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://localhost:8500")
 
 
 class ChatMessage(BaseModel):
@@ -56,6 +60,20 @@ class ProfTestAnswers(BaseModel):
 
 class ProfRecommendation(BaseModel):
     recommendation: str
+
+
+class PictureRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    negative_prompt: Optional[str] = None
+    steps: Optional[int] = Field(default=None, ge=1, le=150)
+    guidance_scale: Optional[float] = Field(default=None, ge=0.0, le=30.0)
+    width: Optional[int] = Field(default=None, ge=64, le=1024)
+    height: Optional[int] = Field(default=None, ge=64, le=1024)
+    seed: Optional[int] = Field(default=None, ge=0)
+
+
+class PictureResponse(BaseModel):
+    url: str
 
 
 # In-memory "хранилище" под текущую сессию: conversation_id -> list of messages
@@ -105,6 +123,31 @@ def profession_endpoint(payload: ProfTestAnswers) -> ProfRecommendation:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return ProfRecommendation(recommendation=recommendation_text)
+
+
+@app.post("/api/picture", response_model=PictureResponse)
+async def generate_picture(payload: PictureRequest) -> PictureResponse:
+    if not AI_SERVICE_URL:
+        raise HTTPException(status_code=500, detail="AI service URL is not configured")
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post(
+                f"{AI_SERVICE_URL.rstrip('/')}/generate",
+                json=payload.model_dump(exclude_none=True),
+            )
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.json().get("detail") if exc.response.content else str(exc)
+            raise HTTPException(status_code=exc.response.status_code, detail=detail) from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=502, detail=f"AI service unreachable: {exc}") from exc
+
+    data = response.json()
+    url = data.get("url")
+    if not url:
+        raise HTTPException(status_code=502, detail="AI service returned invalid payload")
+    return PictureResponse(url=url)
 
 
 def _fake_ai_reply(user_text: str) -> str:
