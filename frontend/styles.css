@@ -422,26 +422,13 @@ body::after {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   place-items: center;
-  overflow: visible;
-  background: rgba(24, 24, 24, 0.78);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  z-index: 0;
+  overflow: hidden;
+  background: var(--panel-bg);
+  color: var(--text);
 }
 
 .card-carousel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 24px 44px rgba(0, 0, 0, 0.42);
-  transform: translate(-20px, -14px);
-  z-index: -1;
-  pointer-events: none;
-  backdrop-filter: inherit;
-  -webkit-backdrop-filter: inherit;
+  content: none;
 }
 
 .carousel-title {
@@ -918,8 +905,8 @@ body::after {
   font-size: clamp(1rem, 1.8vw, 1.3rem);
 }
 
-.arrow.left { left: clamp(12px, 2vw, 24px); }
-.arrow.right { right: clamp(12px, 2vw, 24px); }
+.arrow.left { left: clamp(3px, 0.6vw, 7px); }
+.arrow.right { right: clamp(3px, 0.6vw, 7px); }
 .arrow[disabled] { opacity: 0.35; pointer-events: none; }
 
 /* Image panel with placeholder */
@@ -931,7 +918,7 @@ body::after {
   display: grid;
   place-items: center;
   background: var(--panel-bg);
-  backdrop-filter: blur(14px);
+  color: var(--text);
   aspect-ratio: 4 / 3;
   width: 100%;
   height: 100%;
@@ -1001,14 +988,6 @@ body::after {
   .image-panel {
     aspect-ratio: unset;
     min-height: clamp(260px, 40vh, 340px);
-  }
-
-  .chat-panel::before {
-    transform: translate(-12px, -12px);
-  }
-
-  .card-carousel::before {
-    transform: translate(-10px, -10px);
   }
 }
 
