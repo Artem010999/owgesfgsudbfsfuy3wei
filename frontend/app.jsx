@@ -12,12 +12,15 @@ const STEP_DELAY = 18; // ms per diagonal step
 
 const JSON_MARKER = '<<JSON>>';
 
+const GREETING_TEXT = 'Привет! Кем бы ты хотел себя почувствовать? Если ты еще не знаешь, то можешь пройти тест по профориентации (ссылка на тест).';
+
 function createGreetingMessage() {
   return {
     role: "bot",
     text: (
       <span>
-        Привет! Кем бы ты хотел себя почувствовать? Если ты еще не знаешь, то можешь пройти тест по профориентации (
+        {GREETING_TEXT.replace(' (ссылка на тест)', '')}
+        {' '}(
         <a href="/hhh.html" target="_blank" rel="noreferrer">ссылка на тест</a>
         ).
       </span>
@@ -160,82 +163,66 @@ function normalizeCourses(list = []) {
   });
 }
 
-function buildDefaultCards() {
-  return [
-    {
-      key: 'schedule',
-      render: () => (
-        <ScheduleCard
-          profession="фронтенд-разработчика"
-          schedule={{
-            morning: [
-              { time: '09:00 – 09:15', title: 'Планёрка с проектной командой' },
-              { time: '09:15 – 11:00', title: 'Работа над новой фичей в React' },
-              { time: '11:00 – 12:00', title: 'Созвон с дизайнером и уточнение деталей' },
-            ],
-            afternoon: [
-              { time: '12:00 – 13:00', title: 'Обед и небольшая прогулка' },
-              { time: '13:00 – 15:00', title: 'Рефакторинг компонентов и тесты' },
-              { time: '15:00 – 16:30', title: 'Code review коллег и обсуждение решений' },
-            ],
-            evening: [
-              { time: '16:30 – 17:00', title: 'Синк с продактом по задачам следующего спринта' },
-              { time: '17:00 – 18:00', title: 'Фикс багов с анимацией и регресс' },
-              { time: '18:00 – 18:15', title: 'Подведение итогов дня и апдейт в task tracker' },
-            ],
-          }}
-        />
-      ),
-    },
-    {
-      key: 'growth',
-      render: () => (
-        <GrowthMatrixCard
-          stack={[
-            { title: 'React', description: 'Фреймворк для интерфейсов, хуков и современного UI.' },
-            { title: 'TypeScript', description: 'Типизация помогает держать кодовую базу в порядке.' },
-            { title: 'GraphQL', description: 'Оптимизирует обмен данными между фронтом и бэкендом.' },
-          ]}
-          impact={[
-            { title: 'Быстрые релизы', description: 'Сборка компонент ускоряет вывод новых функций.' },
-            { title: 'Красивый UX', description: 'Улучшаешь пользовательский опыт и метрики продукта.' },
-            { title: 'Надёжность', description: 'Тесты и типизация уменьшают число аварий.' },
-          ]}
-          growth={[
-            { title: 'Junior → Middle', description: 'Берёшь фичи самостоятельно, покрываешь код тестами.' },
-            { title: 'Middle → Senior', description: 'Проектируешь архитектуру, менторишь команду.' },
-            { title: 'Senior → Lead', description: 'Определяешь стратегию развития и процессы разработки.' },
-          ]}
-        />
-      ),
-    },
-    {
-      key: 'messages',
-      render: () => <InboxPreviewCard />,
-    },
-    {
-      key: 'opportunity',
-      render: () => (
-        <OpportunityCard
-          stats={[
-            { label: 'Насколько перспективна?', value: 'Спрос на фронтенд растёт двузначными темпами.' },
-            { label: 'Много ли вакансий?', value: '≈ 4 500 позиций на hh.ru прямо сейчас.' },
-            { label: 'Конкурентность', value: 'Средняя: важно портфолио и навык общения с продуктом.' },
-          ]}
-          vacancies={[
-            { title: 'Middle Frontend Engineer · React', salary: 'от 220 000 ₽', href: 'https://hh.ru/vacancy/123456' },
-            { title: 'Senior UI Developer · Design Systems', salary: 'от 260 000 ₽', href: 'https://hh.ru/vacancy/234567' },
-            { title: 'Frontend-разработчик · SaaS', salary: 'до 240 000 ₽', href: 'https://hh.ru/vacancy/345678' },
-          ]}
-          courses={[
-            { title: 'Архитектура интерфейсов', provider: 'Яндекс Практикум', href: 'https://practicum.yandex.ru/frontend-architect/' },
-            { title: 'Advanced React Patterns', provider: 'EpicReact.dev', href: 'https://epicreact.dev/' },
-            { title: 'Frontend Lead. Углублённый курс', provider: 'Otus', href: 'https://otus.ru/lessons/frontend-lead/' },
-          ]}
-        />
-      ),
-    },
-  ];
+function buildSummaryArtifacts(aiData) {
+  if (!aiData) return null;
+  const profession = aiData.profession || 'специалиста';
+  const schedule = parseSchedule(aiData.schedule);
+  const scheduleLines = [...schedule.morning, ...schedule.afternoon, ...schedule.evening]
+    .map(({ time, title }) => `${time} — ${title}`)
+    .filter(Boolean)
+    .slice(0, 4);
+  const techItems = padToThree(
+    toMatrixItems(aiData.tech_stack ?? [], 'Стек'),
+    'Стек'
+  ).map(({ title, description }) => description ? `${title}: ${description}` : title);
+  const benefitItems = padToThree(
+    toMatrixItems(aiData.company_benefits ?? [], 'Польза'),
+    'Польза'
+  ).map(({ title, description }) => description ? `${title}: ${description}` : title);
+  const growthItems = padToThree(
+    toMatrixItems(aiData.career_growth ?? [], 'Рост'),
+    'Рост'
+  ).map(({ title, description }) => description ? `${title}: ${description}` : title);
+
+  const plainText = [
+    `Результат: ${profession}`,
+    scheduleLines.length ? `Типичный день: ${scheduleLines.join('; ')}` : null,
+    techItems.length ? `Стек: ${techItems.join(', ')}` : null,
+    benefitItems.length ? `Польза: ${benefitItems.join('; ')}` : null,
+    growthItems.length ? `Рост: ${growthItems.join(' → ')}` : null,
+  ].filter(Boolean).join(' | ');
+
+  return {
+    node: (
+      <div className="chat-summary">
+        <div className="chat-summary__section">
+          <span className="chat-summary__title">Результат:</span>
+          <span>{profession}</span>
+        </div>
+        <div className="chat-summary__section">
+          <span className="chat-summary__title">Типичный день:</span>
+          <div className="chat-summary__schedule">
+            {scheduleLines.map((line, idx) => (
+              <span key={idx} className="chat-summary__schedule-line">{line}</span>
+            ))}
+          </div>
+        </div>
+        <div className="chat-summary__section">
+          <span className="chat-summary__title">Стек:</span>
+          <span>{techItems.join(', ')}</span>
+        </div>
+        <div className="chat-summary__section">
+          <span className="chat-summary__title">Польза:</span>
+          <span>{benefitItems.join('; ')}</span>
+        </div>
+        <div className="chat-summary__section">
+          <span className="chat-summary__title">Рост:</span>
+          <span>{growthItems.join(' → ')}</span>
+        </div>
+      </div>
+    ),
+    text: plainText,
+  };
 }
 
 function buildAiCards(aiData) {
@@ -451,6 +438,9 @@ function App() {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [chat, setChat] = useState(() => [createGreetingMessage()]);
+  const [backendHistory, setBackendHistory] = useState(() => [
+    { role: 'assistant', content: GREETING_TEXT },
+  ]);
   const [aiData, setAiData] = useState(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
@@ -473,6 +463,7 @@ function App() {
     setImageUrl('');
     setConversationId(null);
     setAiData(null);
+    setBackendHistory([{ role: 'assistant', content: GREETING_TEXT }]);
   };
 
   const cards = useMemo(() => {
@@ -482,16 +473,13 @@ function App() {
         return generated;
       }
     }
-    if (hasUserInput) {
-      return buildDefaultCards();
-    }
     return [
       {
         key: 'placeholder',
         render: () => <PlaceholderCard />,
       },
     ];
-  }, [aiData, hasUserInput]);
+  }, [aiData]);
 
   const maxCardIndex = cards.length - 1;
 
@@ -713,12 +701,18 @@ function App() {
           <ChatLog items={chat} logRef={logRef} />
           <ChatInput onSend={async (text) => {
             if (!text.trim()) return;
-            setChat(prev => [...prev, { role: "user", text }]);
+            const trimmed = text.trim();
+            const historyPayload = [...backendHistory, { role: "user", content: trimmed }];
+            setChat(prev => [...prev, { role: "user", text: trimmed }]);
             try {
               const res = await fetch("http://127.0.0.1:8000/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text, conversation_id: conversationId }),
+                body: JSON.stringify({
+                  message: trimmed,
+                  conversation_id: conversationId,
+                  history: historyPayload,
+                }),
               });
               const data = await res.json();
               if (data?.conversation_id) {
@@ -726,21 +720,42 @@ function App() {
               }
               const rawReply = data?.reply ?? '';
               const { text: assistantText, json } = extractAssistantParts(rawReply);
+              const structuredFromBackend = data?.structured_data;
+              let updatedHistory = [...historyPayload];
+
               if (assistantText) {
                 setChat(prev => [...prev, { role: "bot", text: assistantText }]);
+                updatedHistory.push({ role: 'assistant', content: assistantText });
               }
-              if (json) {
+
+              if (structuredFromBackend) {
+                setAiData(structuredFromBackend);
+                const summary = buildSummaryArtifacts(structuredFromBackend);
+                if (summary) {
+                  setChat(prev => [...prev, { role: "bot", text: summary.node }]);
+                  updatedHistory.push({ role: 'assistant', content: summary.text });
+                }
+              } else if (json) {
                 try {
                   const parsed = JSON.parse(json);
                   setAiData(parsed);
+                  const summary = buildSummaryArtifacts(parsed);
+                  if (summary) {
+                    setChat(prev => [...prev, { role: "bot", text: summary.node }]);
+                    updatedHistory.push({ role: 'assistant', content: summary.text });
+                  }
                 } catch (error) {
                   console.error('Ошибка разбора JSON от ассистента', error, json);
                 }
               }
+
+              setBackendHistory(updatedHistory);
+
               setImageUrl(`https://picsum.photos/seed/${encodeURIComponent(Date.now() + text)}/1200/900`);
             } catch (e) {
               console.error('Ошибка запроса к /api/chat', e);
               setChat(prev => [...prev, { role: "bot", text: "Ошибка соединения с сервером" }]);
+              setBackendHistory(historyPayload);
             }
           }} logRef={logRef} />
         </section>
