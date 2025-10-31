@@ -10,6 +10,269 @@ const GRID_COLS = 40;
 const GRID_ROWS = 20; // 40 * 20 = 800 tiles
 const STEP_DELAY = 18; // ms per diagonal step
 
+const JSON_MARKER = '<<JSON>>';
+
+function createGreetingMessage() {
+  return {
+    role: "bot",
+    text: (
+      <span>
+        Привет! Кем бы ты хотел себя почувствовать? Если ты еще не знаешь, то можешь пройти тест по профориентации (
+        <a href="/hhh.html" target="_blank" rel="noreferrer">ссылка на тест</a>
+        ).
+      </span>
+    ),
+  };
+}
+
+function extractAssistantParts(reply = '') {
+  if (!reply) {
+    return { text: '', json: null };
+  }
+  const markerIndex = reply.indexOf(JSON_MARKER);
+  if (markerIndex === -1) {
+    return { text: reply.trim(), json: null };
+  }
+  const text = reply.slice(0, markerIndex).trim();
+  const jsonChunk = reply.slice(markerIndex + JSON_MARKER.length).trim();
+  return {
+    text,
+    json: jsonChunk.length ? jsonChunk : null,
+  };
+}
+
+function parseSchedule(schedule = {}) {
+  const parseSlot = (value) => {
+    if (!value) return null;
+    const normalized = String(value);
+    let [timePart, ...rest] = normalized.split('—');
+    if (rest.length === 0) {
+      [timePart, ...rest] = normalized.split('-');
+    }
+    const time = (timePart || '').trim();
+    const title = rest.join('—').trim();
+    return {
+      time: time || '—',
+      title: title || normalized.trim(),
+    };
+  };
+
+  const ensureThree = (list) => {
+    const parsed = (Array.isArray(list) ? list : []).map(parseSlot).filter(Boolean).slice(0, 3);
+    const filled = [...parsed];
+    while (filled.length < 3) {
+      filled.push({ time: '—', title: 'Задача в разработке' });
+    }
+    return filled;
+  };
+
+  return {
+    morning: ensureThree(schedule.morning),
+    afternoon: ensureThree(schedule.lunch ?? schedule.afternoon),
+    evening: ensureThree(schedule.evening),
+  };
+}
+
+function toMatrixItems(list = [], fallbackPrefix) {
+  return list.map((entry, idx) => {
+    if (typeof entry === 'string') {
+      return { title: entry, description: '' };
+    }
+    return {
+      title: entry?.title ?? entry?.name ?? `${fallbackPrefix} ${idx + 1}`,
+      description: entry?.description ?? entry?.detail ?? entry?.note ?? '',
+    };
+  });
+}
+
+function padToThree(items, fallbackPrefix) {
+  const filled = [...items];
+  while (filled.length < 3) {
+    const index = filled.length;
+    filled.push({ title: `${fallbackPrefix} ${index + 1}`, description: '' });
+  }
+  return filled.slice(0, 3);
+}
+
+function normalizeMessages(messages = {}) {
+  const pick = (arr, limit) => (Array.isArray(arr) ? arr.filter(Boolean).slice(0, limit) : []);
+  return {
+    long: pick(messages.long, 1),
+    medium: pick(messages.medium, 2),
+    short: pick(messages.short, 3),
+  };
+}
+
+function normalizeStats(list = []) {
+  return padToThree(
+    list.map((item, idx) => {
+      if (typeof item === 'string') {
+        const [label, ...rest] = item.split(':');
+        if (rest.length) {
+          return { label: label.trim(), value: rest.join(':').trim() };
+        }
+        return { label: item.trim(), value: '' };
+      }
+      return {
+        label: item?.label ?? item?.title ?? `Показатель ${idx + 1}`,
+        value: item?.value ?? item?.detail ?? '',
+      };
+    }),
+    'Показатель'
+  );
+}
+
+function normalizeVacancies(list = []) {
+  return list.slice(0, 3).map((item, idx) => {
+    if (typeof item === 'string') {
+      const parts = item.split('|').map((part) => part.trim());
+      const [title, salary, link] = parts;
+      return {
+        title: title || `Вакансия ${idx + 1}`,
+        salary: salary || 'З/п по договорённости',
+        href: link || '#',
+      };
+    }
+    return {
+      title: item?.title ?? `Вакансия ${idx + 1}`,
+      salary: item?.salary ?? item?.pay ?? 'З/п по договорённости',
+      href: item?.link ?? item?.href ?? '#',
+    };
+  });
+}
+
+function normalizeCourses(list = []) {
+  return list.slice(0, 3).map((item, idx) => {
+    if (typeof item === 'string') {
+      const parts = item.split('|').map((part) => part.trim());
+      const [title, provider, link] = parts;
+      return {
+        title: title || `Курс ${idx + 1}`,
+        provider: provider || 'Провайдер уточняется',
+        href: link || '#',
+      };
+    }
+    return {
+      title: item?.title ?? `Курс ${idx + 1}`,
+      provider: item?.provider ?? item?.school ?? 'Провайдер уточняется',
+      href: item?.link ?? item?.href ?? '#',
+    };
+  });
+}
+
+function buildDefaultCards() {
+  return [
+    {
+      key: 'schedule',
+      render: () => (
+        <ScheduleCard
+          profession="фронтенд-разработчика"
+          schedule={{
+            morning: [
+              { time: '09:00 – 09:15', title: 'Планёрка с проектной командой' },
+              { time: '09:15 – 11:00', title: 'Работа над новой фичей в React' },
+              { time: '11:00 – 12:00', title: 'Созвон с дизайнером и уточнение деталей' },
+            ],
+            afternoon: [
+              { time: '12:00 – 13:00', title: 'Обед и небольшая прогулка' },
+              { time: '13:00 – 15:00', title: 'Рефакторинг компонентов и тесты' },
+              { time: '15:00 – 16:30', title: 'Code review коллег и обсуждение решений' },
+            ],
+            evening: [
+              { time: '16:30 – 17:00', title: 'Синк с продактом по задачам следующего спринта' },
+              { time: '17:00 – 18:00', title: 'Фикс багов с анимацией и регресс' },
+              { time: '18:00 – 18:15', title: 'Подведение итогов дня и апдейт в task tracker' },
+            ],
+          }}
+        />
+      ),
+    },
+    {
+      key: 'growth',
+      render: () => (
+        <GrowthMatrixCard
+          stack={[
+            { title: 'React', description: 'Фреймворк для интерфейсов, хуков и современного UI.' },
+            { title: 'TypeScript', description: 'Типизация помогает держать кодовую базу в порядке.' },
+            { title: 'GraphQL', description: 'Оптимизирует обмен данными между фронтом и бэкендом.' },
+          ]}
+          impact={[
+            { title: 'Быстрые релизы', description: 'Сборка компонент ускоряет вывод новых функций.' },
+            { title: 'Красивый UX', description: 'Улучшаешь пользовательский опыт и метрики продукта.' },
+            { title: 'Надёжность', description: 'Тесты и типизация уменьшают число аварий.' },
+          ]}
+          growth={[
+            { title: 'Junior → Middle', description: 'Берёшь фичи самостоятельно, покрываешь код тестами.' },
+            { title: 'Middle → Senior', description: 'Проектируешь архитектуру, менторишь команду.' },
+            { title: 'Senior → Lead', description: 'Определяешь стратегию развития и процессы разработки.' },
+          ]}
+        />
+      ),
+    },
+    {
+      key: 'messages',
+      render: () => <InboxPreviewCard />,
+    },
+    {
+      key: 'opportunity',
+      render: () => (
+        <OpportunityCard
+          stats={[
+            { label: 'Насколько перспективна?', value: 'Спрос на фронтенд растёт двузначными темпами.' },
+            { label: 'Много ли вакансий?', value: '≈ 4 500 позиций на hh.ru прямо сейчас.' },
+            { label: 'Конкурентность', value: 'Средняя: важно портфолио и навык общения с продуктом.' },
+          ]}
+          vacancies={[
+            { title: 'Middle Frontend Engineer · React', salary: 'от 220 000 ₽', href: 'https://hh.ru/vacancy/123456' },
+            { title: 'Senior UI Developer · Design Systems', salary: 'от 260 000 ₽', href: 'https://hh.ru/vacancy/234567' },
+            { title: 'Frontend-разработчик · SaaS', salary: 'до 240 000 ₽', href: 'https://hh.ru/vacancy/345678' },
+          ]}
+          courses={[
+            { title: 'Архитектура интерфейсов', provider: 'Яндекс Практикум', href: 'https://practicum.yandex.ru/frontend-architect/' },
+            { title: 'Advanced React Patterns', provider: 'EpicReact.dev', href: 'https://epicreact.dev/' },
+            { title: 'Frontend Lead. Углублённый курс', provider: 'Otus', href: 'https://otus.ru/lessons/frontend-lead/' },
+          ]}
+        />
+      ),
+    },
+  ];
+}
+
+function buildAiCards(aiData) {
+  if (!aiData) return null;
+
+  const schedule = parseSchedule(aiData.schedule);
+  const profession = aiData.profession || 'специалиста';
+  const stackItems = padToThree(toMatrixItems(aiData.tech_stack ?? [], 'Стек'), 'Стек');
+  const impactItems = padToThree(toMatrixItems(aiData.company_benefits ?? [], 'Эффект'), 'Эффект');
+  const growthItems = padToThree(toMatrixItems(aiData.career_growth ?? [], 'Рост'), 'Рост');
+  const messages = normalizeMessages(aiData.colleague_messages ?? {});
+  const stats = normalizeStats(aiData?.growth_table?.growth_points ?? []);
+  const vacancies = normalizeVacancies(aiData?.growth_table?.vacancies ?? []);
+  const courses = normalizeCourses(aiData?.growth_table?.courses ?? []);
+
+  return [
+    {
+      key: 'schedule',
+      render: () => <ScheduleCard profession={profession} schedule={schedule} />,
+    },
+    {
+      key: 'growth',
+      render: () => (
+        <GrowthMatrixCard stack={stackItems} impact={impactItems} growth={growthItems} />
+      ),
+    },
+    {
+      key: 'messages',
+      render: () => <MessagesCard messages={messages} profession={profession} />,
+    },
+    {
+      key: 'opportunity',
+      render: () => <OpportunityCard stats={stats} vacancies={vacancies} courses={courses} />,
+    },
+  ];
+}
+
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
 function useResizeObserver(targetRef, callback) {
@@ -187,11 +450,12 @@ function App() {
     }
   });
   const [menuOpen, setMenuOpen] = useState(false);
-  const [chat, setChat] = useState([]);
+  const [chat, setChat] = useState(() => [createGreetingMessage()]);
+  const [aiData, setAiData] = useState(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
   const [conversationId, setConversationId] = useState(null);
-  const hasUserInput = useMemo(() => chat.some(msg => msg.role === "user" && msg.text?.trim().length > 0), [chat]);
+  const hasUserInput = useMemo(() => chat.some(msg => msg.role === "user" && String(msg.text ?? '').trim().length > 0), [chat]);
   const [theme, setTheme] = useState(() => {
     try {
       const saved = window.localStorage.getItem('app-theme');
@@ -204,99 +468,30 @@ function App() {
   const logRef = useRef(null);
 
   const resetSession = () => {
-    setChat([]);
+    setChat([createGreetingMessage()]);
     setCarouselIndex(0);
     setImageUrl('');
     setConversationId(null);
+    setAiData(null);
   };
 
   const cards = useMemo(() => {
-    const placeholderCard = {
-      key: 'placeholder',
-      render: () => <PlaceholderCard />,
-    };
-
-    const scheduleCard = {
-      key: 'schedule',
-      render: () => (
-        <ScheduleCard
-          profession="фронтенд-разработчика"
-          schedule={{
-            morning: [
-              { time: '09:00 – 09:15', title: 'Планёрка с проектной командой' },
-              { time: '09:15 – 11:00', title: 'Работа над новой фичей в React' },
-              { time: '11:00 – 12:00', title: 'Созвон с дизайнером и уточнение деталей' },
-            ],
-            afternoon: [
-              { time: '12:00 – 13:00', title: 'Обед и небольшая прогулка' },
-              { time: '13:00 – 15:00', title: 'Рефакторинг компонентов и тесты' },
-              { time: '15:00 – 16:30', title: 'Code review коллег и обсуждение решений' },
-            ],
-            evening: [
-              { time: '16:30 – 17:00', title: 'Синк с продактом по задачам следующего спринта' },
-              { time: '17:00 – 18:00', title: 'Фикс багов с анимацией и регресс' },
-              { time: '18:00 – 18:15', title: 'Подведение итогов дня и апдейт в task tracker' },
-            ],
-          }}
-        />
-      ),
-    };
-
-    const growthCard = {
-      key: 'growth',
-      render: () => (
-        <GrowthMatrixCard
-          stack={[
-            { title: 'React', description: 'Основной фреймворк для UI с хуками, контекстом и современными паттернами.' },
-            { title: 'TypeScript', description: 'Статическая типизация, которая держит кодовую базу стабильной.' },
-            { title: 'GraphQL', description: 'Оптимизируешь запросы и ускоряешь фронтенд ↔ бэкенд взаимодействие.' },
-          ]}
-          impact={[
-            { title: 'Быстрые релизы', description: 'Ускоряешь вывод фич благодаря хорошо спроектированным компонентам.' },
-            { title: 'Красивый UX', description: 'Прокачиваешь интерфейс и растишь конверсии после A/B-тестов.' },
-            { title: 'Надёжность', description: 'Сокращаешь количество аварий за счёт тестов и типизации.' },
-          ]}
-          growth={[
-            { title: 'Junior → Middle', description: 'Берёшь задачи самостоятельно, покрываешь код тестами и уверенно владеешь стеком.' },
-            { title: 'Middle → Senior', description: 'Проектируешь фичи, менторишь, держишь в порядке кодовую базу.' },
-            { title: 'Senior → Lead', description: 'Определяешь архитектуру и приоритеты, координируешь команду разработки.' },
-          ]}
-        />
-      ),
-    };
-
-    const messagesCard = {
-      key: 'messages',
-      render: () => <InboxPreviewCard />,
-    };
-
-    const opportunityCard = {
-      key: 'opportunity',
-      render: () => (
-        <OpportunityCard
-          stats={[
-            { label: 'Насколько перспективна?', value: 'Очень — сфера растёт двузначными темпами ежегодно.' },
-            { label: 'Много ли вакансий?', value: '≈ 4 500 позиций на hh.ru сейчас' },
-            { label: 'Конкурентность', value: 'Средняя: важнее навыковый стек и портфолио.' },
-          ]}
-          vacancies={[
-            { title: 'Middle Frontend Engineer · React', salary: 'от 220 000 ₽', href: 'https://hh.ru/vacancy/123456' },
-            { title: 'Senior UI Developer · Design Systems', salary: 'от 260 000 ₽', href: 'https://hh.ru/vacancy/234567' },
-            { title: 'Frontend-разработчик · SaaS', salary: 'до 240 000 ₽', href: 'https://hh.ru/vacancy/345678' },
-          ]}
-          courses={[
-            { title: 'Архитектура интерфейсов', provider: 'Яндекс Практикум', href: 'https://practicum.yandex.ru/frontend-architect/' },
-            { title: 'Advanced React Patterns', provider: 'EpicReact.dev', href: 'https://epicreact.dev/' },
-            { title: 'Frontend Lead. Углублённый курс', provider: 'Otus', href: 'https://otus.ru/lessons/frontend-lead/' },
-          ]}
-        />
-      ),
-    };
-
-    return hasUserInput
-      ? [scheduleCard, growthCard, messagesCard, opportunityCard]
-      : [placeholderCard];
-  }, [hasUserInput]);
+    if (aiData) {
+      const generated = buildAiCards(aiData);
+      if (generated && generated.length) {
+        return generated;
+      }
+    }
+    if (hasUserInput) {
+      return buildDefaultCards();
+    }
+    return [
+      {
+        key: 'placeholder',
+        render: () => <PlaceholderCard />,
+      },
+    ];
+  }, [aiData, hasUserInput]);
 
   const maxCardIndex = cards.length - 1;
 
@@ -519,7 +714,6 @@ function App() {
           <ChatInput onSend={async (text) => {
             if (!text.trim()) return;
             setChat(prev => [...prev, { role: "user", text }]);
-            // Запрос к бэку (заглушка)
             try {
               const res = await fetch("http://127.0.0.1:8000/api/chat", {
                 method: "POST",
@@ -527,11 +721,25 @@ function App() {
                 body: JSON.stringify({ message: text, conversation_id: conversationId }),
               });
               const data = await res.json();
-              setConversationId(data.conversation_id);
-              setChat(prev => [...prev, { role: "bot", text: data.reply }]);
-              // при ответе меняем картинку (заглушка URL)
-              setImageUrl(`https://picsum.photos/seed/${encodeURIComponent(Date.now()+text)}/1200/900`);
-            } catch(e) {
+              if (data?.conversation_id) {
+                setConversationId(data.conversation_id);
+              }
+              const rawReply = data?.reply ?? '';
+              const { text: assistantText, json } = extractAssistantParts(rawReply);
+              if (assistantText) {
+                setChat(prev => [...prev, { role: "bot", text: assistantText }]);
+              }
+              if (json) {
+                try {
+                  const parsed = JSON.parse(json);
+                  setAiData(parsed);
+                } catch (error) {
+                  console.error('Ошибка разбора JSON от ассистента', error, json);
+                }
+              }
+              setImageUrl(`https://picsum.photos/seed/${encodeURIComponent(Date.now() + text)}/1200/900`);
+            } catch (e) {
+              console.error('Ошибка запроса к /api/chat', e);
               setChat(prev => [...prev, { role: "bot", text: "Ошибка соединения с сервером" }]);
             }
           }} logRef={logRef} />
@@ -942,6 +1150,48 @@ function InboxPreviewCard() {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function MessagesCard({ messages, profession }) {
+  const longBubble = messages.long?.[0]
+    ? { type: 'long', author: 'Руководитель', preview: messages.long[0] }
+    : null;
+  const mediumBubbles = (messages.medium ?? []).map((text, idx) => ({
+    type: 'medium',
+    author: `Коллега ${idx + 1}`,
+    preview: text,
+  }));
+  const shortBubbles = (messages.short ?? []).map((text, idx) => ({
+    type: 'short',
+    author: `Команда ${idx + 1}`,
+    preview: text,
+  }));
+
+  return (
+    <div className="inbox-card">
+      <header className="inbox-card__header">
+        <h3>Команда приветствует {profession}</h3>
+        <p>Испытай атмосферу — задачи, вопросы и поддержка на лету.</p>
+      </header>
+      <div className="inbox-list">
+        {longBubble && <MessageBubble variant="long" message={longBubble} key="long-ai" />}
+        {shortBubbles.length > 0 && (
+          <div className="inbox-row inbox-row--shorts" key="shorts-ai">
+            {shortBubbles.map((msg, idx) => (
+              <MessageBubble variant="short" message={msg} key={`short-ai-${idx}`} />
+            ))}
+          </div>
+        )}
+        {mediumBubbles.length > 0 && (
+          <div className="inbox-row inbox-row--mediums" key="mediums-ai">
+            {mediumBubbles.map((msg, idx) => (
+              <MessageBubble variant="medium" message={msg} key={`medium-ai-${idx}`} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

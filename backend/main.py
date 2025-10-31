@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Dict, List, Optional
 
@@ -13,6 +14,8 @@ from pydantic import BaseModel, Field
 from uuid import uuid4
 
 from prof_test import CareerAdvisor
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Генератор рабочего вайба API", version="0.1.0")
 
@@ -41,7 +44,7 @@ class ChatResponse(BaseModel):
 
     reply: str
     conversation_id: str
-    history: List[str]
+    history: List[Dict[str, str]]
 
 
 class ErrorResponse(BaseModel):
@@ -77,7 +80,7 @@ class PictureResponse(BaseModel):
 
 
 # In-memory "хранилище" под текущую сессию: conversation_id -> list of messages
-_CHAT_HISTORY: Dict[str, List[str]] = {}
+_CHAT_HISTORY: Dict[str, List[Dict[str, str]]] = {}
 _ADVISOR = CareerAdvisor()
 
 
@@ -87,7 +90,7 @@ def healthcheck() -> dict[str, str]:
 
 
 @app.post("/api/chat", response_model=ChatResponse, responses={400: {"model": ErrorResponse}})
-def chat_endpoint(payload: ChatMessage) -> ChatResponse:
+async def chat_endpoint(payload: ChatMessage) -> ChatResponse:
     """Получает сообщение от пользователя и возвращает "ответ" от ИИ."""
 
     conversation_id = payload.conversation_id or str(uuid4())
@@ -97,14 +100,22 @@ def chat_endpoint(payload: ChatMessage) -> ChatResponse:
     if not message:
         raise HTTPException(status_code=400, detail="Пустое сообщение")
 
-    history.append(f"user: {message}")
+    history.append({"role": "user", "content": message})
 
-    # TODO: интеграция с реальным LLM/сервисом!!!!
-    ai_reply = _fake_ai_reply(message)
+    try:
+        ai_reply = await _call_text_ai(history)
+    except Exception as exc:
+        # Фолбэк на заглушку, если сервис недоступен, но историю не рушим
+        ai_reply = _fake_ai_reply(message)
+        logger.error("Text AI call failed: %s", exc)
 
-    history.append(f"assistant: {ai_reply}")
+    history.append({"role": "assistant", "content": ai_reply})
 
-    return ChatResponse(reply=ai_reply, conversation_id=conversation_id, history=history)
+    return ChatResponse(
+        reply=ai_reply,
+        conversation_id=conversation_id,
+        history=history,
+    )
 
 
 @app.post("/api/profession", response_model=ProfRecommendation)
@@ -158,6 +169,45 @@ def _fake_ai_reply(user_text: str) -> str:
     """
 
     return f"Я услышал: '{user_text}'. Настраиваю рабочий вайб!"
+
+
+async def _call_text_ai(history: List[Dict[str, str]]) -> str:
+    if not AI_SERVICE_URL:
+        raise RuntimeError("AI service URL is not configured")
+
+    payload = {
+        "messages": history,
+        "max_new_tokens": 600,
+        "temperature": 0.7,
+        "top_p": 0.9,
+    }
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        response = await client.post(
+            f"{AI_SERVICE_URL.rstrip('/')}/text/chat",
+            json=payload,
+        )
+
+    if response.status_code >= 400:
+        try:
+            detail = response.json().get("detail")
+        except Exception:  # pragma: no cover
+            detail = response.text
+        raise RuntimeError(f"Text AI service error: {detail}")
+
+    data = response.json()
+    if isinstance(data, dict):
+        if "text" in data and isinstance(data["text"], str):
+            return data["text"].strip()
+        if "reply" in data and isinstance(data["reply"], str):
+            return data["reply"].strip()
+
+    if isinstance(data, list) and data:
+        first = data[0]
+        if isinstance(first, dict) and "generated_text" in first:
+            return str(first["generated_text"]).strip()
+
+    raise RuntimeError("Unexpected response from text AI service")
 
 
 if __name__ == "__main__":
